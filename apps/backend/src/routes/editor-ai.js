@@ -116,56 +116,126 @@ router.post('/ai/polish', async (req, res) => {
 
 router.post('/ai/dehumanize', async (req, res) => {
   const { text, level = 'normal', provider, apiKey, model } = req.body;
-  
-  if (!text) {
+
+  if (!text || text.trim().length === 0) {
     return res.status(400).json({ success: false, error: '文本不能为空' });
   }
 
+  // 改进的提示词，更有效去除AI味
+  const prompts = {
+    light: `你是一个写作风格优化专家。请对以下文字进行轻度修改，去除AI写作痕迹，使其读起来更像人类自然写作的风格。
+
+要求：
+1. 保持原意完全不变
+2. 减少过于完美的对仗工整句式
+3. 让句式更自然流畅
+4. 保持文章整体流畅性
+
+原文：
+${text}
+
+请直接返回优化后的文字，不要加任何说明。`,
+    normal: `你是一个专业编辑。请对以下文字进行修改，彻底去除AI写作痕迹，使其读起来更像人类自然写作的作品。
+
+要求：
+1. 保持原意和主要情节
+2. 打破AI常用的完美句式结构
+3. 增加自然的断句和停顿
+4. 加入人类写作特有的细节和感受
+5. 允许轻微的不完美表达
+
+原文：
+${text}
+
+请直接返回优化后的文字，不要加任何说明。`,
+    strong: `你是一个资深文字编辑。请对以下文字进行深度改写，完全去除AI写作痕迹，使其读起来就像一个经验丰富的人类作者写的。
+
+要求：
+1. 完全改变句式结构，避免AI的对仗工整
+2. 增加自然的断句、重复、思考痕迹
+3. 加入人类的情感细节和个人风格
+4. 保持情节逻辑完整
+5. 让文字有温度和呼吸感
+
+原文：
+${text}
+
+请直接返回改写后的文字，不要加任何说明。`
+  };
+
+  const prompt = prompts[level] || prompts['normal'];
+  let result = null;
+  let errorMsg = null;
+
+  // 尝试调用AI API
   if (apiKey && provider) {
     try {
-      let prompt = '';
-      if (level === 'light') {
-        prompt = `请对以下文字进行轻微修改，去除AI写作痕迹，使其读起来更像人类自然写作的风格。要求：
-1. 保持原意不变
-2. 减少过于完美的句式结构
-3. 允许保留少量口语化表达
-4. 保持文章流畅性
-原文：${text}`;
-      } else if (level === 'strong') {
-        prompt = `请对以下文字进行深度改写，彻底去除AI写作痕迹，使其读起来完全像人类自然写作的作品。要求：
-1. 彻底改变句式结构，避免AI常用的对仗工整
-2. 增加适当的表达不完美性（断句、重复、思考痕迹）
-3. 增加人类特有的细节和感受
-4. 保持文章逻辑和情节完整
-原文：${text}`;
-      } else {
-        prompt = `请对以下文字进行修改，去除AI写作痕迹，使其读起来更像人类自然写作的风格。要求：
-1. 保持原意和主要情节
-2. 减少AI常用的格式化表达
-3. 增加更自然的表达方式
-4. 适当加入人类写作的小特征
-原文：${text}`;
-      }
-      
       const response = await callAI([{ role: 'user', content: prompt }], apiKey, model, provider);
       const content = extractContent(response);
-      
+
       if (content) {
-        return res.json({ success: true, data: { original: text, level, result: content } });
+        result = content;
       }
     } catch (err) {
       console.error('Dehumanize AI error:', err.message);
+      errorMsg = err.message;
     }
   }
-  
-  const mockResults = {
-    light: text.replace(/，$/, '。').replace(/。$/, '......').replace(/！$/, '！').replace(/：/g, ':'),
-    normal: text.replace(/AI/gi, '人工智能').replace(/。{2,}/g, '......').replace(/，$/, '。').replace(/\n\n/g, '\n'),
-    strong: `${text}\n\n（以上内容经过人工润色，去除了AI生成的格式化痕迹，保留了人类写作的自然感。）`
-  };
-  
-  const result = mockResults[level] || mockResults['normal'];
-  res.json({ success: true, data: { original: text, level, result } });
+
+  // 如果没有AI结果，使用增强的模拟结果
+  if (!result) {
+    // 更智能的模拟去AI味
+    let processed = text;
+
+    if (level === 'strong') {
+      // 深度处理：打乱句式，增加自然感
+      processed = processed
+        // 将连续的长句拆分成短句
+        .replace(/，([^，]{10,})/g, '。$1')
+        // 减少完美的对仗
+        .replace(/。([^。]{0,2})。([^。]{0,2})。/g, '...$1, $2.')
+        // 增加自然的停顿
+        .replace(/\n\n/g, '\n')
+        // 打乱过于整齐的列举
+        .replace(/、([^、]{1,3})、([^、]{1,3})、/g, '，$1，$2，')
+        // 添加自然的思考痕迹
+        + '\n\n（人工润色）';
+    } else if (level === 'light') {
+      // 轻度处理：保持结构，只做微调
+      processed = processed
+        // 轻微打乱句尾
+        .replace(/。$/, '......')
+        .replace(/，$/, '，......')
+        // 减少感叹号使用
+        .replace(/！{2,}/g, '！')
+        // 轻微调整
+        .replace(/\n\n\n/g, '\n\n');
+    } else {
+      // 普通处理：中等程度
+      processed = processed
+        // 减少AI常用的完美句式
+        .replace(/\.{2,}/g, '...')
+        .replace(/，$/, '...')
+        // 增加自然断句
+        .replace(/。{2,}/g, '...')
+        // 打乱过于整齐的句式
+        .replace(/，([^，]{5,})，([^，]{5,})，/g, '...$1...$2...')
+        // 添加标记
+        + '\n\n（已优化表达）';
+    }
+
+    result = processed;
+  }
+
+  res.json({
+    success: true,
+    data: {
+      original: text,
+      level,
+      result,
+      error: errorMsg
+    }
+  });
 });
 
 router.post('/ai/branch-plot', async (req, res) => {

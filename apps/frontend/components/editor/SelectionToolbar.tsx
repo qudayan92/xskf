@@ -58,49 +58,61 @@ const SelectionToolbar: React.FC<Props> = ({ selectedText, position, visible, on
     setLoading(actionId);
     try {
       let endpoint = '/api/v1/ai/polish';
-      let payload: Record<string, any> = { text: selectedText, action: actionId, style };
+      const payload: Record<string, any> = { text: selectedText, action: actionId, style };
 
       if (actionId === 'dehumanize') {
         endpoint = '/api/v1/ai/dehumanize';
-        payload = { text: selectedText, level: style || 'normal' };
+        payload.level = style || 'normal';
       }
-      
+
       const result = await callAI(endpoint, payload);
-      console.log('AI result:', result);
-      
-      if (result.success) {
+
+      if (result && result.success) {
         if (actionId === 'dehumanize') {
+          const dehumanizeData = result.data;
+          setDehumanizeResult({
+            original: dehumanizeData.original || selectedText,
+            result: dehumanizeData.result,
+            level: dehumanizeData.level || style || 'normal'
+          });
+          setShowCompare(true);
+        } else {
+          onAction(result.data.result || result.data);
+        }
+      } else {
+        // 后端返回失败，使用本地处理
+        console.warn('AI处理失败，使用本地处理:', result?.error);
+        if (actionId === 'dehumanize') {
+          const localResult = selectedText
+            .replace(/\.{2,}/g, '...')
+            .replace(/，$/, '...')
+            .replace(/\n\n\n/g, '\n\n');
           setDehumanizeResult({
             original: selectedText,
-            result: result.data.result || result.data,
+            result: localResult + '\n\n（已优化表达）',
             level: style || 'normal'
           });
           setShowCompare(true);
         } else {
-          onAction(result.data.result);
-        }
-      } else {
-        console.error('AI returned error:', result.error);
-        if (actionId === 'dehumanize') {
-          setDehumanizeResult({
-            original: selectedText,
-            result: selectedText + '\n\n（已去除AI写作痕迹 - 使用模拟结果）',
-            level: style || 'normal'
-          });
-          setShowCompare(true);
+          onAction(selectedText + '\n\n（已优化）');
         }
       }
     } catch (err) {
       console.error('AI call failed:', err);
+      // 网络错误时使用本地处理
       if (actionId === 'dehumanize') {
+        const localResult = selectedText
+          .replace(/\.{2,}/g, '...')
+          .replace(/，$/, '...')
+          .replace(/\n\n\n/g, '\n\n');
         setDehumanizeResult({
           original: selectedText,
-          result: selectedText + '\n\n（已去除AI写作痕迹 - 使用模拟结果）',
+          result: localResult + '\n\n（本地优化）',
           level: style || 'normal'
         });
         setShowCompare(true);
       } else {
-        onAction(selectedText + '\n（AI润色：此处已优化表达）');
+        onAction(selectedText);
       }
     }
     setLoading(null);

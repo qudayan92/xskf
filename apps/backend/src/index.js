@@ -66,6 +66,10 @@ app.use('/api/v1', editorAiRouter);
 const aiRouter = require('./routes/ai');
 app.use('/api/v1', aiRouter);
 
+// ===== Chapter Title Generator Routes =====
+const chapterTitlesRouter = require('./routes/chapter-titles');
+app.use('/api/v1/generate/chapter-titles', chapterTitlesRouter);
+
 
 // ===== In-memory storage (legacy/Agent/Collab/AI) =====
 const projects = [];

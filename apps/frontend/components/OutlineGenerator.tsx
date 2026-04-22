@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import { callAI } from '../lib/ai';
+import ChapterTitleGenerator from './ChapterTitleGenerator';
 
 interface Props {
   visible: boolean;
@@ -25,6 +26,7 @@ const OutlineGenerator: React.FC<Props> = ({ visible, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [outline, setOutline] = useState<Outline | null>(null);
   const [activeTab, setActiveTab] = useState<'structure' | 'plot' | 'details'>('structure');
+  const [showChapterTitles, setShowChapterTitles] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -130,6 +132,16 @@ const OutlineGenerator: React.FC<Props> = ({ visible, onClose }) => {
           </button>
 
           {outline && (
+            <button
+              onClick={() => setShowChapterTitles(true)}
+              className="w-full mt-3 px-6 py-3 rounded-xl text-white font-medium transition-all"
+              style={{ background: 'rgba(124,106,240,0.3)', border: '1px solid rgba(124,106,240,0.5)' }}
+            >
+              生成章节标题
+            </button>
+          )}
+
+          {outline && (
             <div className="mt-6 p-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
               <div className="flex gap-2 mb-4">
                 {['structure', 'plot', 'details'].map(tab => (
@@ -200,6 +212,18 @@ const OutlineGenerator: React.FC<Props> = ({ visible, onClose }) => {
             </div>
           )}
         </div>
+
+        {/* 章节标题生成器 */}
+        {showChapterTitles && (
+          <ChapterTitleGenerator
+            visible={showChapterTitles}
+            onClose={() => setShowChapterTitles(false)}
+            onApply={(chapters) => {
+              console.log('应用章节标题:', chapters);
+              alert(`已应用 ${chapters.length} 个章节标题`);
+            }}
+          />
+        )}
       </div>
     </div>
   );

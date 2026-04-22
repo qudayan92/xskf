@@ -1,0 +1,52 @@
+name: Frontend E2E
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout: 10000s
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Start frontend dev server
+        run: |
+          npm --prefix ./apps/frontend run dev &
+          echo $! > frontend.pid
+          # Wait for server to be ready
+          for i in {1..60}; do
+            curl -sSf http://localhost:3000/ >/dev/null && echo "Server Ready" && break
+            sleep 1
+          done
+        env:
+          CI: true
+
+      - name: Install Playwright browsers
+        run: npx playwright install
+        env:
+          CI: true
+
+      - name: Run Playwright tests
+        run: |
+          npx playwright test
+        env:
+          CI: true
+
+      - name: Stop frontend dev server
+        if: always()
+        run: |
+          if [ -f frontend.pid ]; then
+            kill -9 $(cat frontend.pid) || true
+            rm -f frontend.pid
+          fi

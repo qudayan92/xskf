@@ -1,0 +1,13 @@
+{
+  "name": "docs",
+  "private": true,
+  "version": "0.1.0",
+  "dependencies": {
+    "express": "^4.18.2",
+    "markdown-it": "^13.0.1"
+  },
+  "scripts": {
+    "dev": "node server.js",
+    "build": "node build-docs.js"
+  }
+}

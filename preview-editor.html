@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>明睿创作平台 - 编辑器预览</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0f0f12; color: #e4e4e7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    
+    /* Header */
+    .header { display: flex; align-items: center; justify-content: space-between; padding: 0 24px; height: 56px; background: #16161c; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-icon { width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, #7c6af0, #6b5ce7); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px; }
+    .logo-text { font-size: 14px; font-weight: 500; color: white; }
+    .header-actions { display: flex; align-items: center; gap: 8px; }
+    .btn { padding: 6px 12px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; transition: all 0.2s; }
+    .btn-primary { background: #7c6af0; color: white; }
+    .btn-ghost { background: transparent; color: #a1a1aa; }
+    .btn-ghost:hover { background: rgba(255,255,255,0.05); color: white; }
+    
+    /* Width Controls */
+    .width-controls { display: flex; justify-content: flex-end; gap: 8px; padding: 6px 12px; background: #15161c; }
+    .width-controls span { color: #a1a1aa; font-size: 12px; align-self: center; }
+    
+    /* Three Column Layout */
+    .layout { display: grid; grid-template-columns: 260px 1fr 320px; height: calc(100vh - 100px); }
+    .left-panel { background: #16161c; border-right: 1px solid rgba(255,255,255,0.06); overflow-y: auto; padding: 16px; }
+    .middle-panel { display: flex; flex-direction: column; }
+    .right-panel { background: #16161c; border-left: 1px solid rgba(255,255,255,0.06); overflow-y: auto; }
+    
+    /* Toolbar */
+    .toolbar { display: flex; align-items: center; gap: 4px; padding: 8px 24px; background: #16161c; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .toolbar-btn { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #71717a; cursor: pointer; font-size: 13px; }
+    .toolbar-btn:hover { background: rgba(255,255,255,0.05); color: white; }
+    .divider { width: 1px; height: 20px; background: rgba(255,255,255,0.06); margin: 0 8px; }
+    
+    /* Editor */
+    .editor { flex: 1; padding: 48px 64px; overflow-y: auto; }
+    .editor textarea { width: 100%; height: 100%; background: transparent; border: none; outline: none; color: #e4e4e7; font-family: 'Georgia', serif; font-size: 17px; line-height: 1.9; resize: none; }
+    
+    /* Sidebar Sections */
+    .sidebar-section { padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .sidebar-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #52525b; margin-bottom: 12px; }
+    
+    /* Chapter List */
+    .chapter-item { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 8px; cursor: pointer; margin-bottom: 4px; }
+    .chapter-item:hover { background: rgba(255,255,255,0.03); }
+    .chapter-item.active { background: rgba(124,106,240,0.15); color: #7c6af0; }
+    .chapter-title { font-size: 14px; flex: 1; }
+    .chapter-words { font-size: 12px; color: #52525b; }
+    
+    /* Outline */
+    .outline-item { margin-bottom: 12px; }
+    .outline-title { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #d4d4d8; margin-bottom: 4px; }
+    .outline-child { padding-left: 24px; font-size: 12px; color: #71717a; padding: 4px 0; }
+    
+    /* AI Actions */
+    .ai-action { width: 100%; text-align: left; padding: 12px; border-radius: 8px; background: #1c1c24; border: 1px solid rgba(255,255,255,0.04); margin-bottom: 8px; cursor: pointer; transition: all 0.2s; }
+    .ai-action:hover { border-color: rgba(255,255,255,0.1); }
+    .ai-action-title { font-size: 14px; font-weight: 500; color: white; margin-bottom: 4px; }
+    .ai-action-desc { font-size: 12px; color: #71717a; }
+    
+    /* Agent Grid */
+    .agent-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 8px; }
+    .agent-card { background: rgba(255,255,255,0.03); border-radius: 8px; padding: 8px; border: 1px solid rgba(255,255,255,0.04); }
+    .agent-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .agent-avatar { width: 28px; height: 28px; border-radius: 14px; background: linear-gradient(135deg, #7c6af0, #6b5ce7); display: flex; align-items: center; justify-content: center; font-size: 14px; }
+    .agent-name { font-size: 14px; color: white; }
+    .agent-role { font-size: 12px; color: #71717a; }
+    .agent-status { font-size: 11px; padding: 2px 6px; border-radius: 4px; display: inline-block; }
+    .status-waiting { background: rgba(74,222,128,0.2); color: #4ade80; }
+    .status-assigned { background: rgba(251,191,36,0.2); color: #fbbf24; }
+    .agent-task { font-size: 11px; color: #71717a; margin-top: 4px; }
+    
+    /* Collab Panel */
+    .collab-input { width: 100%; min-height: 60px; padding: 8px 12px; background: #1c1c24; border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; color: white; font-size: 13px; resize: none; margin-bottom: 8px; }
+    .collab-input:focus { outline: none; border-color: #7c6af0; }
+    .collab-list { margin-top: 12px; max-height: 200px; overflow-y: auto; }
+    .collab-item { background: rgba(255,255,255,0.03); border-radius: 8px; padding: 8px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.04); }
+    .collab-meta { display: flex; justify-content: space-between; margin-bottom: 4px; }
+    .collab-author { font-size: 12px; color: #fbbf24; }
+    .collab-time { font-size: 12px; color: #52525b; }
+    .collab-text { font-size: 13px; color: #d4d4d8; }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">睿</div>
+      <span class="logo-text">明睿创作</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-ghost">专注模式</button>
+      <button class="btn btn-primary">保存</button>
+    </div>
+  </div>
+
+  <!-- Width Controls -->
+  <div class="width-controls">
+    <span>左宽</span>
+    <button class="btn btn-ghost" onclick="adjustWidth('left', -40)">-40</button>
+    <button class="btn btn-ghost" onclick="adjustWidth('left', 40)">+40</button>
+    <span style="margin-left: 16px;">右宽</span>
+    <button class="btn btn-ghost" onclick="adjustWidth('right', -40)">-40</button>
+    <button class="btn btn-ghost" onclick="adjustWidth('right', 40)">+40</button>
+  </div>
+
+  <!-- Three Column Layout -->
+  <div class="layout" id="layout">
+    <!-- Left Panel -->
+    <div class="left-panel" id="leftPanel">
+      <div class="sidebar-section">
+        <div class="sidebar-title">章节</div>
+        <div class="chapter-item active">
+          <span>📄</span>
+          <span class="chapter-title">第一章：星际迷途</span>
+        </div>
+        <div class="chapter-item">
+          <span>📄</span>
+          <span class="chapter-title">第二章：未知信号</span>
+          <span class="chapter-words">2,156 字</span>
+        </div>
+        <div class="chapter-item">
+          <span>📄</span>
+          <span class="chapter-title">第三章：紧急救援</span>
+          <span class="chapter-words">0 字</span>
+        </div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-title">大纲</div>
+        <div class="outline-item">
+          <div class="outline-title">▾ 第一幕：启程</div>
+          <div class="outline-child">1.1 主角登场</div>
+          <div class="outline-child">1.2 任务接受</div>
+          <div class="outline-child">1.3 出发</div>
+        </div>
+        <div class="outline-item">
+          <div class="outline-title">▾ 第二幕：遭遇</div>
+          <div class="outline-child">2.1 异常信号</div>
+          <div class="outline-child">2.2 神秘文明</div>
+          <div class="outline-child">2.3 抉择</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Middle Panel -->
+    <div class="middle-panel">
+      <div class="toolbar">
+        <div class="toolbar-btn"><b>B</b></div>
+        <div class="toolbar-btn"><i>I</i></div>
+        <div class="toolbar-btn"><u>U</u></div>
+        <div class="divider"></div>
+        <div class="toolbar-btn">H1</div>
+        <div class="toolbar-btn">H2</div>
+        <div class="toolbar-btn">H3</div>
+        <div class="divider"></div>
+        <div class="toolbar-btn">☰</div>
+        <div style="flex: 1;"></div>
+        <span style="font-size: 12px; color: #52525b;">第 1 章 | 约 3,280 字</span>
+      </div>
+      <div class="editor">
+        <textarea>飞船穿越星际尘埃带，林远航注视着舷窗外无尽的星海。这是他离开地球的第三百七十二天，也是他成为星际探索员的第一个年头。
+
+突然，通讯器传来一阵刺耳的杂音，紧接着是一个陌生的声音——
+
+"探索员林远航，这里是未知文明信号，请注意接收..."
+
+他握紧了操纵杆，心跳加速。这是人类首次接收到来自银河系边缘的智慧信号。所有的训练、所有的准备，都是为了这一刻。
+
+"请表明你的身份和意图。" 他尽量让自己的声音保持平稳。
+
+沉默持续了整整十秒。然后，那个声音再次响起，带着一种奇异的韵律：
+
+"我们是守望者。你们已经走过了漫长的路，但真正的旅程才刚刚开始..."</textarea>
+      </div>
+    </div>
+
+    <!-- Right Panel -->
+    <div class="right-panel" id="rightPanel">
+      <div class="sidebar-section">
+        <div class="sidebar-title">AI 助手</div>
+        <button class="ai-action">
+          <div class="ai-action-title">续写</div>
+          <div class="ai-action-desc">基于当前内容续写下一段</div>
+        </button>
+        <button class="ai-action">
+          <div class="ai-action-title">润色</div>
+          <div class="ai-action-desc">优化文字表达与风格</div>
+        </button>
+        <button class="ai-action">
+          <div class="ai-action-title">摘要</div>
+          <div class="ai-action-desc">生成当前章节概要</div>
+        </button>
+        <button class="ai-action">
+          <div class="ai-action-title">扩展</div>
+          <div class="ai-action-desc">扩展当前情节细节</div>
+        </button>
+        <div style="margin-top: 12px; padding: 12px; background: rgba(124,106,240,0.1); border: 1px solid rgba(124,106,240,0.2); border-radius: 8px;">
+          <p style="font-size: 12px; color: #a1a1aa; line-height: 1.7;">💡 当前段落氛围偏紧张，建议在下一段加入一些轻松的对话来平衡节奏。</p>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-title">Agent 面板</div>
+        <div class="agent-grid" id="agentGrid">
+          <!-- Agents will be rendered here -->
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-title">协作日志</div>
+        <textarea class="collab-input" id="collabInput" placeholder="记录协作日志..."></textarea>
+        <button class="btn btn-primary" style="width: 100%;" onclick="addCollabLog()">添加日志</button>
+        <div class="collab-list" id="collabList">
+          <!-- Collab logs will be rendered here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Agent Data
+    const agents = [
+      { id: 1, name: '林墨', role: '主角', status: '待命', avatar: '🕶️' },
+      { id: 2, name: '姬紫月', role: '助手', status: '待命', avatar: '🌙' },
+      { id: 3, name: '风影', role: '顾问', status: '待命', avatar: '🗡️' },
+      { id: 4, name: '德洛', role: '顾问', status: '待命', avatar: '🎓' },
+      { id: 5, name: '娜塔', role: '专家', status: '待命', avatar: '🪐' },
+      { id: 6, name: '艾琳', role: '顾问', status: '待命', avatar: '💡' },
+      { id: 7, name: '赵铭', role: '实习', status: '待命', avatar: '🧭' },
+    ];
+
+    let collabLogs = [];
+    let leftWidth = 260;
+    let rightWidth = 320;
+
+    // Render Agents
+    function renderAgents() {
+      const grid = document.getElementById('agentGrid');
+      grid.innerHTML = agents.map(a => `
+        <div class="agent-card">
+          <div class="agent-header">
+            <div class="agent-avatar">${a.avatar}</div>
+            <div>
+              <div class="agent-name">${a.name}</div>
+              <div class="agent-role">${a.role}</div>
+            </div>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+            <span class="agent-status ${a.status === '待命' ? 'status-waiting' : 'status-assigned'}">${a.status}</span>
+            <button class="btn btn-ghost" style="padding: 4px 8px; font-size: 11px;" onclick="assignTask(${a.id})">分配</button>
+          </div>
+          ${a.currentTask ? `<div class="agent-task">任务: ${a.currentTask}</div>` : ''}
+        </div>
+      `).join('');
+    }
+
+    // Assign Task
+    function assignTask(id) {
+      const task = prompt('请输入要分配的任务描述');
+      if (task && task.trim()) {
+        const agent = agents.find(a => a.id === id);
+        if (agent) {
+          agent.currentTask = task.trim();
+          agent.status = '分配中';
+          renderAgents();
+        }
+      }
+    }
+
+    // Add Collaboration Log
+    function addCollabLog() {
+      const input = document.getElementById('collabInput');
+      const text = input.value.trim();
+      if (text) {
+        collabLogs.unshift({
+          id: Date.now(),
+          author: '你',
+          text: text,
+          ts: new Date().toLocaleTimeString()
+        });
+        input.value = '';
+        renderCollabLogs();
+      }
+    }
+
+    // Render Collaboration Logs
+    function renderCollabLogs() {
+      const list = document.getElementById('collabList');
+      if (collabLogs.length === 0) {
+        list.innerHTML = '<div style="font-size: 12px; color: #52525b; text-align: center; padding: 12px;">暂无协作日志</div>';
+        return;
+      }
+      list.innerHTML = collabLogs.map(log => `
+        <div class="collab-item">
+          <div class="collab-meta">
+            <span class="collab-author">${log.author}</span>
+            <span class="collab-time">${log.ts}</span>
+          </div>
+          <div class="collab-text">${log.text}</div>
+        </div>
+      `).join('');
+    }
+
+    // Adjust Width
+    function adjustWidth(side, delta) {
+      if (side === 'left') {
+        leftWidth = Math.max(180, Math.min(600, leftWidth + delta));
+      } else {
+        rightWidth = Math.max(260, Math.min(700, rightWidth + delta));
+      }
+      document.getElementById('layout').style.gridTemplateColumns = `${leftWidth}px 1fr ${rightWidth}px`;
+    }
+
+    // Initialize
+    renderAgents();
+    renderCollabLogs();
+  </script>
+</body>
+</html>

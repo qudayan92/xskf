@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>明睿创作平台 - 预览</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0f0f12;
+      --bg-secondary: #16161c;
+      --bg-tertiary: #1c1c24;
+      --bg-elevated: #22222c;
+      --text-primary: #e4e4e7;
+      --text-secondary: #a1a1aa;
+      --text-tertiary: #71717a;
+      --text-muted: #52525b;
+      --accent-primary: #7c6af0;
+      --accent-secondary: #6b5ce7;
+      --accent-glow: rgba(124, 106, 240, 0.15);
+      --glass-border: rgba(255, 255, 255, 0.06);
+    }
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    
+    .container { max-width: 1152px; margin: 0 auto; padding: 0 24px; }
+    
+    /* Header */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(15, 15, 18, 0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--glass-border);
+    }
+    header .inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 12px;
+      color: white;
+    }
+    .logo-text { font-weight: 500; color: white; }
+    
+    nav { display: flex; gap: 4px; }
+    nav a {
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: 8px;
+      text-decoration: none;
+      color: #a1a1aa;
+      transition: all 0.2s;
+    }
+    nav a:hover { color: white; }
+    nav a.active {
+      color: white;
+      background: var(--accent-glow);
+    }
+    
+    /* Main */
+    main { padding: 64px 0; }
+    
+    /* Hero */
+    .hero { text-align: center; margin-bottom: 96px; }
+    .hero h1 {
+      font-size: 36px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 24px;
+    }
+    .hero h1 span { color: var(--accent-primary); }
+    .hero p {
+      font-size: 18px;
+      color: var(--text-secondary);
+      line-height: 1.8;
+      margin-bottom: 40px;
+      max-width: 480px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .hero-btns { display: flex; gap: 12px; justify-content: center; }
+    .btn {
+      padding: 12px 24px;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+    .btn-primary { background: var(--accent-primary); color: white; }
+    .btn-primary:hover { background: var(--accent-secondary); }
+    .btn-secondary { background: var(--bg-tertiary); color: #d4d4d8; border: 1px solid var(--glass-border); }
+    .btn-secondary:hover { background: var(--bg-elevated); }
+    
+    /* Steps */
+    .steps {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      max-width: 800px;
+      margin: 0 auto 96px;
+    }
+    .step { text-align: center; flex: 1; }
+    .step-num {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      margin: 0 auto 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-family: monospace;
+      background: var(--bg-tertiary);
+      border: 1px solid rgba(124, 106, 240, 0.3);
+      color: var(--accent-primary);
+    }
+    .step h3 { font-weight: 500; color: white; margin-bottom: 4px; font-size: 14px; }
+    .step p { font-size: 12px; color: var(--text-tertiary); }
+    .step-line { width: 64px; height: 1px; background: var(--glass-border); margin: 0 8px; }
+    
+    /* Section */
+    section { margin-bottom: 96px; }
+    section h2 { font-size: 24px; font-weight: 600; text-align: center; margin-bottom: 48px; }
+    
+    /* Features */
+    .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .feature {
+      padding: 24px;
+      border-radius: 16px;
+      background: var(--bg-secondary);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .feature:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    .feature-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--accent-glow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-primary);
+      margin-bottom: 16px;
+    }
+    .feature h3 { font-weight: 500; color: white; margin-bottom: 8px; }
+    .feature p { font-size: 14px; color: var(--text-tertiary); line-height: 1.7; }
+    
+    /* Upcoming */
+    .upcoming h3 { font-size: 12px; color: var(--text-tertiary); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .upcoming-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    .upcoming-item {
+      padding: 16px;
+      border-radius: 8px;
+      background: var(--bg-secondary);
+      border: 1px solid rgba(255, 255, 255, 0.03);
+    }
+    .upcoming-item span {
+      display: inline-block;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: var(--bg-tertiary);
+      color: var(--text-tertiary);
+      margin-bottom: 8px;
+    }
+    .upcoming-item h4 { font-weight: 500; color: #d4d4d8; font-size: 14px; margin-bottom: 4px; }
+    .upcoming-item p { font-size: 12px; color: var(--text-muted); }
+    
+    /* CTA */
+    .cta {
+      text-align: center;
+      padding: 48px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(124, 106, 240, 0.1), rgba(107, 92, 231, 0.05));
+      border: 1px solid rgba(124, 106, 240, 0.2);
+    }
+    .cta h2 { font-size: 20px; font-weight: 600; color: white; margin-bottom: 12px; }
+    .cta p { font-size: 14px; color: var(--text-tertiary); margin-bottom: 24px; }
+    
+    /* Footer */
+    footer {
+      padding: 32px 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+      text-align: center;
+    }
+    footer p { font-size: 14px; color: var(--text-muted); }
+    
+    /* Icons */
+    .icon { width: 20px; height: 20px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container inner">
+      <div class="logo">
+        <div class="logo-icon">睿</div>
+        <span class="logo-text">明睿创作</span>
+      </div>
+      <nav>
+        <a href="#" class="active">首页</a>
+        <a href="#">作品</a>
+        <a href="#">创作</a>
+        <a href="#">智能体</a>
+        <a href="#">世界观</a>
+        <a href="#">数据</a>
+      </nav>
+    </div>
+  </header>
+  
+  <main class="container">
+    <!-- Hero -->
+    <section class="hero">
+      <h1><span>AI 赋能</span>的创作平台</h1>
+      <p>从灵感到成书，智能大纲、角色建模、世界观构建，让创作更高效，让故事更精彩。</p>
+      <div class="hero-btns">
+        <a href="#" class="btn btn-primary">开始创作</a>
+        <a href="#features" class="btn btn-secondary">了解更多</a>
+      </div>
+    </section>
+    
+    <!-- Steps -->
+    <section class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <h3>构思</h3>
+        <p>设定主题、类型与创作方向</p>
+      </div>
+      <div class="step-line"></div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <h3>大纲</h3>
+        <p>AI 辅助生成故事结构</p>
+      </div>
+      <div class="step-line"></div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <h3>角色</h3>
+        <p>创建人物档案与关系网络</p>
+      </div>
+      <div class="step-line"></div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <h3>创作</h3>
+        <p>智能编辑与实时协作</p>
+      </div>
+    </section>
+    
+    <!-- Features -->
+    <section id="features">
+      <h2>核心功能</h2>
+      <div class="features-grid">
+        <div class="feature">
+          <div class="feature-icon">
+            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+          </div>
+          <h3>智能大纲</h3>
+          <p>AI 分析故事结构，生成逻辑清晰的情节脉络</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">
+            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+          </div>
+          <h3>角色建模</h3>
+          <p>构建立体人物档案，性格、动机、外貌全方位刻画</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">
+            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <h3>世界观构建</h3>
+          <p>创建完整世界设定，历史、地理、文化一脉相承</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">
+            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+          </div>
+          <h3>智能编辑</h3>
+          <p>续写、润色、摘要，AI 与你共同创作</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">
+            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
+          </div>
+          <h3>版本管理</h3>
+          <p>多版本对比，历史追溯，协作更高效</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">
+            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          </div>
+          <h3>多格式导出</h3>
+          <p>PDF、EPUB、Word，适配各类阅读与出版需求</p>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Upcoming -->
+    <section class="upcoming">
+      <h3>即将推出</h3>
+      <div class="upcoming-grid">
+        <div class="upcoming-item">
+          <span>即将上线</span>
+          <h4>语音创作</h4>
+          <p>语音输入，AI 即时转文字</p>
+        </div>
+        <div class="upcoming-item">
+          <span>即将上线</span>
+          <h4>智能校对</h4>
+          <p>语法、标点、逻辑全面检测</p>
+        </div>
+        <div class="upcoming-item">
+          <span>即将上线</span>
+          <h4>版权检测</h4>
+          <p>原创性分析与相似度比对</p>
+        </div>
+        <div class="upcoming-item">
+          <span>即将上线</span>
+          <h4>社区互动</h4>
+          <p>读者反馈与创作交流</p>
+        </div>
+      </div>
+    </section>
+    
+    <!-- CTA -->
+    <section class="cta">
+      <h2>准备好开始你的创作了吗？</h2>
+      <p>立即体验 AI 智能创作，让你的故事与众不同</p>
+      <button class="btn btn-primary" style="padding: 12px 32px; font-size: 16px;">立即开始 ✍️</button>
+    </section>
+  </main>
+  
+  <footer>
+    <div class="container">
+      <p>© 2026 明睿创作平台. All rights reserved.</p>
+    </div>
+  </footer>
+</body>
+</html>

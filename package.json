@@ -1,0 +1,21 @@
+{
+  "name": "novel-ai-platform",
+  "private": true,
+  "workspaces": [
+    "apps/frontend",
+    "apps/backend",
+    "docs",
+    "tools/opencodet"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm --prefix apps/frontend run dev\" \"npm --prefix apps/backend run dev\"",
+    "dev:frontend": "npm --prefix apps/frontend run dev",
+    "dev:backend": "npm --prefix apps/backend run dev",
+    "build": "npm --prefix apps/frontend run build",
+    "start": "npm --prefix apps/frontend start",
+    "lint": "echo Linting is not configured yet"
+  },
+  "devDependencies": {
+    "concurrently": "^7.6.0"
+  }
+}

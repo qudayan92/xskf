@@ -1,0 +1,13 @@
+{
+  "title": "明睿小说开放文档",
+  "version": "v0.1",
+  "languages": ["zh"],
+  "structure": [
+    "overview",
+    "architecture",
+    "api/v1",
+    "user-guides",
+    "developer-guides",
+    "templates"
+  ]
+}

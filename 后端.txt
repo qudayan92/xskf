@@ -1,0 +1,3 @@
+数据库文件: apps/backend/data/novel.db (49KB)
+API已成功返回数据: /api/v1/novels 返回1部测试作品
+初始用户: admin, testuser (密码: test123)

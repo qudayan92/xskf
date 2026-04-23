@@ -84,6 +84,7 @@ const Editor: React.FC = () => {
 
   // Outline Generator
   const [showOutline, setShowOutline] = useState(false);
+  const [savedOutline, setSavedOutline] = useState<any>(null);
 
   const startX = useRef<number>(0);
   const startLeft = useRef<number>(260);
@@ -404,17 +405,42 @@ const Editor: React.FC = () => {
 
             <div className="p-4">
               <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">大纲</div>
-              {outline.map((section) => (
-                <div key={section.id} className="mb-3">
-                  <div className="flex items-center gap-2 text-sm text-gray-300 mb-1">
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"/></svg>
-                    {section.title}
-                  </div>
-                  {section.children.map((child, i) => (
-                    <div key={i} className="pl-6 py-1 text-xs" style={{ color: '#71717a' }}>{child}</div>
-                  ))}
+              {savedOutline ? (
+                <div className="space-y-2">
+                  {savedOutline.structure && (
+                    <>
+                      <div className="text-xs" style={{ color: '#7c6af0' }}>第一幕</div>
+                      <div className="text-xs pl-2" style={{ color: '#a1a1aa' }}>{savedOutline.structure.act1}</div>
+                      <div className="text-xs mt-2" style={{ color: '#7c6af0' }}>第二幕</div>
+                      <div className="text-xs pl-2" style={{ color: '#a1a1aa' }}>{savedOutline.structure.act2}</div>
+                      <div className="text-xs mt-2" style={{ color: '#7c6af0' }}>第三幕</div>
+                      <div className="text-xs pl-2" style={{ color: '#a1a1aa' }}>{savedOutline.structure.act3}</div>
+                    </>
+                  )}
+                  {savedOutline.plotPoints && savedOutline.plotPoints.length > 0 && (
+                    <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                      <div className="text-xs mb-2" style={{ color: '#71717a' }}>情节点</div>
+                      {savedOutline.plotPoints.slice(0, 5).map((p: any, i: number) => (
+                        <div key={i} className="text-xs py-1" style={{ color: '#a1a1aa' }}>
+                          <span style={{ color: '#7c6af0' }}>第{p.chapter}章</span> {p.title}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              ))}
+              ) : (
+                outline.map((section) => (
+                  <div key={section.id} className="mb-3">
+                    <div className="flex items-center gap-2 text-sm text-gray-300 mb-1">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"/></svg>
+                      {section.title}
+                    </div>
+                    {section.children.map((child, i) => (
+                      <div key={i} className="pl-6 py-1 text-xs" style={{ color: '#71717a' }}>{child}</div>
+                    ))}
+                  </div>
+                ))
+              )}
             </div>
           </aside>
         )}
@@ -618,7 +644,18 @@ const Editor: React.FC = () => {
           }}
           onSave={(data) => {
             console.log('保存大纲:', data);
-            alert(`大纲已保存\n作品：${data.title}\n类型：${data.genre}\n章节数：${data.outline.chapterCount || 0}\n已生成标题：${data.chapters?.length || 0} 章`);
+            setSavedOutline(data.outline);
+            // Also apply chapters to editor if any
+            if (data.chapters && data.chapters.length > 0) {
+              const formattedChapters: Chapter[] = data.chapters.map((ch: any, idx: number) => ({
+                id: Math.max(...chapters.map(c => c.id), 0) + idx + 1,
+                title: `第${ch.chapter}章：${ch.title}`,
+                content: '',
+                active: false
+              }));
+              setChapters(prev => [...prev, ...formattedChapters]);
+            }
+            setShowOutline(false);
           }}
         />
       )}

@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import RightPanelComposite from '../../components/RightPanelComposite';
 import SelectionToolbar from '../../components/editor/SelectionToolbar';
 import BranchPanel from '../../components/editor/BranchPanel';
@@ -9,6 +10,13 @@ import LogicChecker from '../../components/editor/LogicChecker';
 import OutlineGenerator from '../../components/OutlineGenerator';
 import AIConfigModal, { getAIConfig, isMockMode } from '../../components/AIConfigModal';
 import { useStore } from '../../store';
+
+interface NovelInfo {
+  id: number;
+  book_id: string;
+  title: string;
+  subtitle: string | null;
+}
 
 interface Chapter {
   id: number;
@@ -30,20 +38,23 @@ const outline = [
   { id: 2, title: '第二幕：遭遇', children: ['2.1 异常信号', '2.2 神秘文明', '2.3 抉择'] },
 ];
 
-function loadChapters(): Chapter[] {
+function loadChapters(novelId: string): Chapter[] {
   if (typeof window === 'undefined') return defaultChapters;
   try {
-    const raw = localStorage.getItem(CHAPTERS_KEY);
+    const raw = localStorage.getItem(`${CHAPTERS_KEY}_${novelId}`);
     if (raw) return JSON.parse(raw);
   } catch {}
   return defaultChapters;
 }
 
-function saveChapters(chapters: Chapter[]) {
-  try { localStorage.setItem(CHAPTERS_KEY, JSON.stringify(chapters)); } catch {}
+function saveChapters(novelId: string, chapters: Chapter[]) {
+  try { localStorage.setItem(`${CHAPTERS_KEY}_${novelId}`, JSON.stringify(chapters)); } catch {}
 }
 
 const Editor: React.FC = () => {
+  const router = useRouter();
+  const { novelId } = router.query;
+  const [novelInfo, setNovelInfo] = useState<NovelInfo | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>(defaultChapters);
   const [activeChapterId, setActiveChapterId] = useState(1);
   const [focusMode, setFocusMode] = useState(false);
@@ -87,28 +98,96 @@ const Editor: React.FC = () => {
   const wordCount = activeChapter.content.replace(/\s/g, '').length;
   const charCount = activeChapter.content.length;
 
+  // Fetch novel info and chapters when novelId changes
   useEffect(() => {
-    const saved = loadChapters();
-    setChapters(saved);
-    setActiveChapterId(saved.find(c => c.active)?.id || saved[0].id);
+    if (novelId && typeof novelId === 'string') {
+      fetchNovelInfo(novelId);
+      fetchNovelChapters(novelId);
+    }
+  }, [novelId]);
+
+  const fetchNovelInfo = async (bid: string) => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/novels/${bid}`);
+      const data = await res.json();
+      if (data.success && data.data) {
+        setNovelInfo({
+          id: data.data.id,
+          book_id: data.data.book_id,
+          title: data.data.title,
+          subtitle: data.data.subtitle
+        });
+      }
+    } catch (err) {
+      console.error('Failed to fetch novel info:', err);
+    }
+  };
+
+  const fetchNovelChapters = async (bid: string) => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/books/${bid}/chapters`);
+      const data = await res.json();
+      if (data.success && data.data && data.data.length > 0) {
+        const loadedChapters: Chapter[] = data.data.map((ch: any, idx: number) => ({
+          id: ch.id || idx + 1,
+          title: ch.chapter_title || ch.title || `第${idx + 1}章`,
+          content: ch.content || '',
+          active: idx === 0
+        }));
+        setChapters(loadedChapters);
+        setActiveChapterId(loadedChapters[0]?.id || 1);
+      } else {
+        const saved = loadChapters(bid);
+        setChapters(saved);
+        setActiveChapterId(saved.find(c => c.active)?.id || saved[0].id);
+      }
+      setClientOnly(true);
+    } catch (err) {
+      console.error('Failed to fetch chapters:', err);
+      const saved = loadChapters(bid);
+      setChapters(saved);
+      setActiveChapterId(saved.find(c => c.active)?.id || saved[0].id);
+      setClientOnly(true);
+    }
     fetchAgents();
     fetchComments();
-    setClientOnly(true);
-  }, []);
+  };
 
   useEffect(() => {
     clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(() => {
-      saveToStorage();
+      if (novelId && typeof novelId === 'string') {
+        saveToStorage(novelId);
+      }
       setSaved(true);
       setSaveTime(new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }));
     }, 1500);
     setSaved(false);
-  }, [activeChapter.content]);
+  }, [activeChapter.content, novelId]);
 
-  const saveToStorage = useCallback(() => {
-    saveChapters(chapters);
+  const saveToStorage = useCallback((bid: string) => {
+    saveChapters(bid, chapters);
   }, [chapters]);
+
+  const saveChaptersToServer = async (bid: string) => {
+    // Save chapters to server
+    try {
+      for (const ch of chapters) {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/chapters/${ch.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            book_id: bid,
+            chapter_title: ch.title,
+            content: ch.content,
+            word_count: ch.content.replace(/\s/g, '').length
+          })
+        });
+      }
+    } catch (err) {
+      console.error('Failed to save chapters to server:', err);
+    }
+  };
 
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
@@ -138,14 +217,19 @@ const Editor: React.FC = () => {
   const switchChapter = useCallback((id: number) => {
     setChapters(prev => prev.map(c => ({ ...c, active: c.id === id })));
     setActiveChapterId(id);
-    saveToStorage();
-  }, [saveToStorage]);
+    if (novelId && typeof novelId === 'string') {
+      saveToStorage(novelId);
+    }
+  }, [saveToStorage, novelId]);
 
   const handleSave = useCallback(() => {
-    saveToStorage();
+    if (novelId && typeof novelId === 'string') {
+      saveToStorage(novelId);
+      saveChaptersToServer(novelId);
+    }
     setSaved(true);
     setSaveTime(new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }));
-  }, [saveToStorage]);
+  }, [saveToStorage, novelId]);
 
   const handleUndo = useCallback(() => {
     if (historyIndex > 0) {
@@ -244,7 +328,7 @@ const Editor: React.FC = () => {
             </a>
           </Link>
           <span style={{ color: '#52525b' }}>|</span>
-          <span className="text-sm" style={{ color: '#71717a' }}>星际流光</span>
+          <span className="text-sm" style={{ color: '#71717a' }}>{novelInfo?.title || '星际流光'}</span>
         </div>
 
         <div className="flex items-center gap-2">

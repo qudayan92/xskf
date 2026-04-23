@@ -40,7 +40,7 @@ router.post('/', async (req, res) => {
     const status = typeof novel?.status === 'number' ? novel.status : 0;
     const word_count = novel?.word_count || 0;
 
-    const sqlNovel = `INSERT INTO novels (book_id, author_id, title, subtitle, cover_image, summary, category_id, tags, status, word_count) VALUES (?, ?, ?, ?, NULL, NULL, ?, ?, ?, ?)`;
+    const sqlNovel = `INSERT INTO novels (book_id, author_id, title, subtitle, cover_image, summary, category_id, tags, status, word_count, updated_at) VALUES (?, ?, ?, ?, NULL, NULL, ?, ?, ?, ?, datetime('now'))`;
     const novelParams = [bookId, authorId, title, subtitle, category_id, tags, status, word_count];
     await run(sqlNovel, novelParams);
     const novelId = await getLastInsertRowId();

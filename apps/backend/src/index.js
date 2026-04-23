@@ -47,6 +47,21 @@ app.use('/api/v1/worlds', worldsRouter);
 app.use('/api/v1/projects', projectsRouter);
 app.use('/api/v1/novels', novelsRouter);
 app.use('/api/v1', chaptersRouter);
+
+// ===== Books Chapters Routes =====
+app.get('/api/v1/books/:bookId/chapters', async (req, res) => {
+  try {
+    const { bookId } = req.params;
+    const chapters = await query(
+      'SELECT * FROM chapters WHERE book_id = ? ORDER BY chapter_no ASC',
+      [bookId]
+    );
+    res.json({ success: true, data: chapters });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 app.use('/api/v1/users', usersRouter);
 app.use('/api/v1/categories', categoriesRouter);
 

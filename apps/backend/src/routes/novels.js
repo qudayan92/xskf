@@ -15,7 +15,13 @@ router.get('/', async (req, res) => {
 // GET /api/v1/novels/:id
 router.get('/:id', async (req, res) => {
   try {
-    const novel = await Novel.findById(req.params.id);
+    const id = req.params.id;
+    let novel;
+    if (/^\d+$/.test(id)) {
+      novel = await Novel.findById(id);
+    } else {
+      novel = await Novel.findByBookId(id);
+    }
     if (!novel) return res.status(404).json({ success: false, error: '作品不存在' });
     res.json({ success: true, data: novel });
   } catch (err) {

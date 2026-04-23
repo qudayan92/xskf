@@ -18,13 +18,12 @@ const NovelDetail: React.FC = () => {
   const fetchNovelData = async (novelId: string) => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/v1/novels/${novelId}`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/novels/${novelId}`);
       const data = await res.json();
       console.log('Novel API response:', data);
       if (data.success && data.data) {
         setNovel(data.data);
-        // Fetch chapters
-        const chaptersRes = await fetch(`/api/v1/books/${novelId}/chapters`);
+        const chaptersRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/books/${data.data.book_id}/chapters`);
         const chaptersData = await chaptersRes.json();
         if (chaptersData.success) {
           setChapters(chaptersData.data);

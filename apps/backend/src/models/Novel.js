@@ -27,7 +27,19 @@ class Novel {
     const sql = `INSERT INTO novels (book_id, author_id, title, subtitle, cover_image, summary, category_id, tags, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     await run(sql, [book_id, author_id, title, subtitle || null, cover_image || null, summary || null, category_id || 0, tags || null, status || 0]);
     const id = await getLastInsertRowId();
-    return this.findById(id);
+    // Return the created novel data directly instead of querying
+    return {
+      id,
+      book_id,
+      author_id,
+      title,
+      subtitle: subtitle || null,
+      cover_image: cover_image || null,
+      summary: summary || null,
+      category_id: category_id || 0,
+      tags: tags || null,
+      status: status || 0
+    };
   }
 
   static async update(id, data) {

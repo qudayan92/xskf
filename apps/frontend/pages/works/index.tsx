@@ -23,6 +23,9 @@ const Works: React.FC = () => {
   const [novels, setNovels] = useState<Novel[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'ongoing' | 'completed'>('all');
+  const [editingNovel, setEditingNovel] = useState<Novel | null>(null);
+  const [editForm, setEditForm] = useState({ title: '', subtitle: '', status: 0 });
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchNovels();
@@ -31,29 +34,96 @@ const Works: React.FC = () => {
   const fetchNovels = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/v1/novels');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/novels`);
       const data = await res.json();
-      if (data.success && data.data && data.data.length > 0) {
+      if (data.success && data.data) {
         setNovels(data.data);
       } else {
-        setNovels(getMockNovels());
+        setNovels([]);
       }
     } catch (err) {
       console.error('Failed to fetch novels:', err);
-      setNovels(getMockNovels());
+      setNovels([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const getMockNovels = (): Novel[] => [
-    { id: 1, book_id: 'BK001', title: '星际流光', subtitle: '银河系边缘的星际探索', cover_image: null, category_id: 3, tags: '科幻,星际,冒险', status: 1, word_count: 328000, chapter_count: 128, last_update_time: new Date().toISOString(), created_at: new Date().toISOString() },
-    { id: 2, book_id: 'BK002', title: '长安夜话', subtitle: '大唐盛世下的悬疑谜案', cover_image: null, category_id: 5, tags: '历史,悬疑,推理', status: 1, word_count: 156000, chapter_count: 56, last_update_time: new Date(Date.now() - 86400000).toISOString(), created_at: new Date().toISOString() },
-    { id: 3, book_id: 'BK003', title: '迷雾之塔', subtitle: '古老魔法世界的冒险', cover_image: null, category_id: 8, tags: '奇幻,魔法,冒险', status: 2, word_count: 89000, chapter_count: 32, last_update_time: new Date(Date.now() - 172800000).toISOString(), created_at: new Date().toISOString() },
-    { id: 4, book_id: 'BK004', title: '深海回声', subtitle: '深海深处的秘密', cover_image: null, category_id: 6, tags: '悬疑,科幻,探险', status: 0, word_count: 0, chapter_count: 0, last_update_time: null, created_at: new Date().toISOString() },
-    { id: 5, book_id: 'BK005', title: '暗夜传说', subtitle: '不为人知的秘密', cover_image: null, category_id: 2, tags: '都市,奇幻,冒险', status: 1, word_count: 210000, chapter_count: 89, last_update_time: new Date(Date.now() - 432000000).toISOString(), created_at: new Date().toISOString() },
-    { id: 6, book_id: 'BK006', title: '时光旅行者', subtitle: '穿越时空的爱恋', cover_image: null, category_id: 4, tags: '言情,科幻,时空', status: 1, word_count: 450000, chapter_count: 156, last_update_time: new Date(Date.now() - 604800000).toISOString(), created_at: new Date().toISOString() },
-  ];
+  const handleDelete = async (novel: Novel, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!confirm(`确定删除《${novel.title}》吗？此操作不可恢复。`)) return;
+
+    setDeletingId(novel.book_id);
+    try {
+      const res = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/novels/${novel.id}`);
+      if (res.data.success) {
+        setNovels(novels.filter(n => n.id !== novel.id));
+      } else {
+        alert('删除失败: ' + (res.data.error || '未知错误'));
+      }
+    } catch (err: any) {
+      alert('删除失败: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleEdit = (novel: Novel, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setEditingNovel(novel);
+    setEditForm({
+      title: novel.title,
+      subtitle: novel.subtitle || '',
+      status: novel.status
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingNovel) return;
+
+    try {
+      const res = await axios.patch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/novels/${editingNovel.id}`, {
+        title: editForm.title,
+        subtitle: editForm.subtitle,
+        status: editForm.status
+      });
+      if (res.data.success) {
+        setNovels(novels.map(n => n.id === editingNovel.id ? { ...n, ...editForm } : n));
+        setEditingNovel(null);
+      } else {
+        alert('保存失败: ' + (res.data.error || '未知错误'));
+      }
+    } catch (err: any) {
+      alert('保存失败: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
+  const handleCreate = async () => {
+    const pname = prompt('统一创建入口：项目名称');
+    if (!pname) return;
+    const genre = prompt('统一创建入口：项目类型', '科幻') || '科幻';
+    const summary = prompt('统一创建入口：项目简介', '') || '';
+    const title = prompt('统一创建入口：小说标题', pname) || pname;
+    const authorInput = prompt('统一创建入口：作者ID (留空使用默认管理员)', '1');
+    const author_id = authorInput ? Number(authorInput) : 1;
+
+    try {
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/create-composite`, {
+        project: { name: pname, genre, summary },
+        novel: { title, author_id }
+      });
+      if (res.data?.success && res.data?.data) {
+        fetchNovels();
+        alert('统一创建成功');
+      } else {
+        alert('统一创建失败: ' + (res.data?.error || '无返回数据'));
+      }
+    } catch (err: any) {
+      alert('统一创建失败: ' + (err.response?.data?.error || err.message));
+    }
+  };
 
   const filteredNovels = filter === 'all' ? novels : novels.filter(n => n.status === (filter === 'ongoing' ? 1 : 2));
 
@@ -66,10 +136,11 @@ const Works: React.FC = () => {
 
   return (
     <div className="min-h-screen" style={{ background: '#0f0f12', color: '#e4e4e7' }}>
-      <header style={{ 
+      {/* Header */}
+      <header style={{
         width: '100%', position: 'fixed', top: 0, left: 0, zIndex: 9999,
-        background: 'rgba(15, 15, 18, 0.9)', 
-        backdropFilter: 'blur(20px)', 
+        background: 'rgba(15, 15, 18, 0.9)',
+        backdropFilter: 'blur(20px)',
         borderBottom: '1px solid rgba(255,255,255,0.06)',
         height: 64
       }}>
@@ -107,55 +178,29 @@ const Works: React.FC = () => {
       </header>
 
       <main className="max-w-6xl mx-auto px-6 py-12" style={{ paddingTop: 80 }}>
-        <div className="flex items-center justify-between mb-12">
+        {/* Title Bar */}
+        <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-semibold mb-1">我的作品</h1>
             <p className="text-sm" style={{ color: '#71717a' }}>管理你的创作项目</p>
           </div>
           <div className="flex items-center gap-2">
-            <Link href="/create" legacyBehavior>
-              <a className="px-5 py-2.5 text-sm font-medium rounded-lg inline-flex items-center justify-center" style={{ background: '#7c6af0', color: '#fff' }}>
-                + 新建作品
-              </a>
-            </Link>
             <button
-              onClick={async () => {
-                const pname = prompt('统一创建入口：项目名称');
-                if (!pname) return;
-                const genre = prompt('统一创建入口：项目类型', '科幻') || '科幻';
-                const summary = prompt('统一创建入口：项目简介', '') || '';
-                const title = prompt('统一创建入口：小说标题', pname) || pname;
-                const authorInput = prompt('统一创建入口：作者ID (留空使用默认管理员)', '1');
-                const author_id = authorInput ? Number(authorInput) : undefined;
-                try {
-                  const res = await axios.post('/api/v1/create-composite', {
-                    project: { name: pname, genre, summary },
-                    novel: { title, author_id }
-                  });
-                  const resData = res.data;
-                  if (resData?.success && resData?.data) {
-                    fetchNovels();
-                    alert('统一创建成功');
-                  } else {
-                    alert('统一创建失败: ' + (resData?.error || '无返回数据'));
-                  }
-                } catch (e: any) {
-                  console.error('Unified create error:', e);
-                  alert('统一创建失败: ' + (e.response?.data?.error || e.message));
-                }
-              }}
-              className="px-4 py-2 text-sm font-medium rounded-lg" style={{ background: '#1f1f24', color: '#e5e7eb' }}
+              onClick={handleCreate}
+              className="px-4 py-2 text-sm font-medium rounded-lg"
+              style={{ background: '#1f1f24', color: '#e5e7eb' }}
             >
               统一创建入口
             </button>
           </div>
         </div>
 
+        {/* Filter Tabs */}
         <div className="flex gap-2 mb-8">
           {[
-            { id: 'all', label: '全部' },
-            { id: 'ongoing', label: '连载中' },
-            { id: 'completed', label: '已完结' },
+            { id: 'all', label: `全部 (${novels.length})` },
+            { id: 'ongoing', label: `连载中 (${novels.filter(n => n.status === 1).length})` },
+            { id: 'completed', label: `已完结 (${novels.filter(n => n.status === 2).length})` },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -171,87 +216,205 @@ const Works: React.FC = () => {
           ))}
         </div>
 
-        <div className="grid grid-cols-4 gap-4 mb-12">
-          <div className="p-5 rounded-xl" style={{ background: '#16161c', border: '1px solid rgba(255,255,255,0.04)' }}>
-            <div className="text-2xl font-semibold mb-1">{novels.length}</div>
+        {/* Stats */}
+        <div className="grid grid-cols-4 gap-4 mb-8">
+          <div className="p-4 rounded-xl" style={{ background: '#16161c', border: '1px solid rgba(255,255,255,0.04)' }}>
+            <div className="text-2xl font-semibold">{novels.length}</div>
             <div className="text-xs" style={{ color: '#71717a' }}>总作品数</div>
           </div>
-          <div className="p-5 rounded-xl" style={{ background: '#16161c', border: '1px solid rgba(255,255,255,0.04)' }}>
-            <div className="text-2xl font-semibold mb-1">{novels.filter(n => n.status === 1).length}</div>
+          <div className="p-4 rounded-xl" style={{ background: '#16161c', border: '1px solid rgba(255,255,255,0.04)' }}>
+            <div className="text-2xl font-semibold">{novels.filter(n => n.status === 1).length}</div>
             <div className="text-xs" style={{ color: '#71717a' }}>连载中</div>
           </div>
-          <div className="p-5 rounded-xl" style={{ background: '#16161c', border: '1px solid rgba(255,255,255,0.04)' }}>
-            <div className="text-2xl font-semibold mb-1">{novels.filter(n => n.status === 2).length}</div>
+          <div className="p-4 rounded-xl" style={{ background: '#16161c', border: '1px solid rgba(255,255,255,0.04)' }}>
+            <div className="text-2xl font-semibold">{novels.filter(n => n.status === 2).length}</div>
             <div className="text-xs" style={{ color: '#71717a' }}>已完结</div>
           </div>
-          <div className="p-5 rounded-xl" style={{ background: '#16161c', border: '1px solid rgba(255,255,255,0.04)' }}>
-            <div className="text-2xl font-semibold mb-1">{(novels.reduce((sum, n) => sum + (n.word_count || 0), 0) / 1000).toFixed(0)}K</div>
+          <div className="p-4 rounded-xl" style={{ background: '#16161c', border: '1px solid rgba(255,255,255,0.04)' }}>
+            <div className="text-2xl font-semibold">{(novels.reduce((sum, n) => sum + (n.word_count || 0), 0) / 1000).toFixed(0)}K</div>
             <div className="text-xs" style={{ color: '#71717a' }}>总字数</div>
           </div>
         </div>
 
+        {/* Novels Grid */}
         {loading ? (
           <div style={{ textAlign: 'center', color: '#71717a', padding: '48px' }}>加载中...</div>
         ) : filteredNovels.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '48px', color: '#71717a' }}>
             <div className="text-4xl mb-3">📚</div>
-            <p>暂无作品，开始创作第一个故事吧</p>
-            <Link href="/editor" legacyBehavior>
-              <a className="mt-4 inline-block px-6 py-2 rounded-lg" style={{ background: '#7c6af0', color: '#fff' }}>
-                创建作品
-              </a>
-            </Link>
+            <p>暂无作品</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredNovels.map((novel) => (
-              novel ? (
-                <Link key={novel.id} href={`/works/${novel.id}`} legacyBehavior>
-                  <a className="block p-6 rounded-xl cursor-pointer transition-all hover-lift" style={{ background: '#16161c', border: '1px solid rgba(255,255,255,0.04)' }}>
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <h3 className="text-lg font-medium text-white mb-1 line-clamp-1">{novel.title}</h3>
-                        {novel.subtitle && <p className="text-sm mb-2" style={{ color: '#71717a' }}>{novel.subtitle}</p>}
-                        <span className="px-2 py-0.5 text-xs rounded-full" style={{
-                          background: 'rgba(124,106,240,0.15)',
-                          color: '#7c6af0'
-                        }}>
-                          {statusMap[novel.status]?.text || novel.status}
-                        </span>
-                      </div>
-                      {novel.cover_image && (
-                        <div className="w-16 h-20 flex-shrink-0" style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
-                          <img src={novel.cover_image} alt={novel.title} className="w-full h-full object-cover" style={{ opacity: 0.8 }} />
-                        </div>
-                      )}
-                    </div>
+              <div
+                key={novel.id}
+                className="p-5 rounded-xl cursor-pointer transition-all hover:border-purple-500/30"
+                style={{ background: '#16161c', border: '1px solid rgba(255,255,255,0.04)' }}
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1 min-w-0">
+                    <Link href={`/works/${novel.book_id}`} legacyBehavior>
+                      <a className="block">
+                        <h3 className="text-lg font-medium text-white mb-1 truncate">{novel.title}</h3>
+                        {novel.subtitle && (
+                          <p className="text-sm truncate" style={{ color: '#71717a' }}>{novel.subtitle}</p>
+                        )}
+                      </a>
+                    </Link>
+                  </div>
+                  <div className="flex items-center gap-1 ml-2">
+                    <span
+                      className="px-2 py-0.5 text-xs rounded-full"
+                      style={{
+                        background: 'rgba(124,106,240,0.15)',
+                        color: statusMap[novel.status]?.color || '#7c6af0'
+                      }}
+                    >
+                      {statusMap[novel.status]?.text || '草稿'}
+                    </span>
+                  </div>
+                </div>
 
-                    <div className="flex items-center justify-between mb-4 px-2">
-                      <div className="flex gap-4 text-xs">
-                        <span style={{ color: '#a1a1aa' }}>{(novel.word_count || 0).toLocaleString()} 字</span>
-                        <span style={{ color: '#a1a1aa' }}>{novel.chapter_count || 0} 章</span>
-                      </div>
-                    </div>
+                {/* Stats Row */}
+                <div className="flex items-center justify-between text-xs mb-3" style={{ color: '#71717a' }}>
+                  <div className="flex gap-4">
+                    <span>{(novel.word_count || 0).toLocaleString()} 字</span>
+                    <span>{novel.chapter_count || 0} 章</span>
+                  </div>
+                  <span>更新于 {novel.last_update_time ? new Date(novel.last_update_time).toLocaleDateString('zh-CN') : '-'}</span>
+                </div>
 
-                    <div className="flex items-center justify-between text-xs" style={{ color: '#52525b' }}>
-                      <span>更新于 {novel.last_update_time ? new Date(novel.last_update_time).toLocaleDateString('zh-CN') : '-'}</span>
-                      {novel.tags && (
-                        <div className="flex gap-1">
-                          {novel.tags.split(',').slice(0, 2).map((tag: string, i: number) => (
-                            <span key={i} className="px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.05)', color: '#71717a' }}>
-                              {tag.trim()}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </a>
-                </Link>
-              ) : null
+                {/* Tags */}
+                {novel.tags && (
+                  <div className="flex gap-1 mb-3 flex-wrap">
+                    {novel.tags.split(',').slice(0, 3).map((tag, i) => (
+                      <span
+                        key={i}
+                        className="px-2 py-0.5 text-xs rounded"
+                        style={{ background: 'rgba(255,255,255,0.05)', color: '#71717a' }}
+                      >
+                        {tag.trim()}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex items-center gap-2 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                  <Link href={`/works/${novel.book_id}`} legacyBehavior>
+                    <a
+                      className="flex-1 px-3 py-1.5 text-xs text-center rounded-lg"
+                      style={{ background: 'rgba(124,106,240,0.2)', color: '#a5b4fc' }}
+                    >
+                      打开
+                    </a>
+                  </Link>
+                  <button
+                    onClick={(e) => handleEdit(novel, e)}
+                    className="px-3 py-1.5 text-xs rounded-lg"
+                    style={{ background: 'rgba(255,255,255,0.05)', color: '#888' }}
+                  >
+                    编辑
+                  </button>
+                  <button
+                    onClick={(e) => handleDelete(novel, e)}
+                    disabled={deletingId === novel.book_id}
+                    className="px-3 py-1.5 text-xs rounded-lg"
+                    style={{
+                      background: 'rgba(239,68,68,0.1)',
+                      color: '#ef4444',
+                      opacity: deletingId === novel.book_id ? 0.5 : 1
+                    }}
+                  >
+                    {deletingId === novel.book_id ? '删除中...' : '删除'}
+                  </button>
+                </div>
+              </div>
             ))}
           </div>
         )}
       </main>
+
+      {/* Edit Modal */}
+      {editingNovel && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.8)',
+            zIndex: 10000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+          onClick={() => setEditingNovel(null)}
+        >
+          <div
+            className="rounded-xl p-6 w-full max-w-md"
+            style={{ background: '#1a1a1f', border: '1px solid rgba(255,255,255,0.1)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <h2 className="text-lg font-medium text-white mb-4">编辑作品</h2>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs mb-1" style={{ color: '#888' }}>标题</label>
+                <input
+                  type="text"
+                  value={editForm.title}
+                  onChange={e => setEditForm({ ...editForm, title: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg text-sm"
+                  style={{ background: '#25252a', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs mb-1" style={{ color: '#888' }}>简介</label>
+                <textarea
+                  value={editForm.subtitle}
+                  onChange={e => setEditForm({ ...editForm, subtitle: e.target.value })}
+                  rows={3}
+                  className="w-full px-3 py-2 rounded-lg text-sm resize-none"
+                  style={{ background: '#25252a', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs mb-1" style={{ color: '#888' }}>状态</label>
+                <select
+                  value={editForm.status}
+                  onChange={e => setEditForm({ ...editForm, status: Number(e.target.value) })}
+                  className="w-full px-3 py-2 rounded-lg text-sm"
+                  style={{ background: '#25252a', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }}
+                >
+                  <option value={0}>草稿</option>
+                  <option value={1}>连载中</option>
+                  <option value={2}>已完结</option>
+                  <option value={3}>暂停</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex gap-2 mt-6">
+              <button
+                onClick={() => setEditingNovel(null)}
+                className="flex-1 px-4 py-2 text-sm rounded-lg"
+                style={{ background: 'rgba(255,255,255,0.05)', color: '#888' }}
+              >
+                取消
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                className="flex-1 px-4 py-2 text-sm font-medium rounded-lg"
+                style={{ background: '#7c6af0', color: '#fff' }}
+              >
+                保存
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -11,6 +13,13 @@ interface Character {
   avatar: string | null;
   personality: string | null;
   tags: string | null;
+  appearance: string | null;
+  background: string | null;
+  goals: string | null;
+  secrets: string | null;
+  weaknesses: string | null;
+  arc: string | null;
+  habit: string | null;
 }
 
 const roleColors: Record<string, { bg: string; text: string }> = {
@@ -22,12 +31,18 @@ const roleColors: Record<string, { bg: string; text: string }> = {
   '伙伴': { bg: 'rgba(59,130,246,0.15)', text: '#3b82f6' },
 };
 
+const roles = ['主角', '女主', '反派', '配角', '导师', '伙伴'];
+const genders = ['男', '女', '未知'];
+
 export default function CharactersPage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [characters, setCharacters] = useState<Character[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
+  const [editingChar, setEditingChar] = useState<Character | null>(null);
+  const [editForm, setEditForm] = useState<any>({});
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -36,7 +51,7 @@ export default function CharactersPage() {
 
   async function fetchCharacters() {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/characters`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/characters`);
       const data = await res.json();
       if (data.success) setCharacters(data.data);
     } catch (err) {
@@ -49,40 +64,102 @@ export default function CharactersPage() {
   async function deleteChar(id: number) {
     if (!confirm('确定要删除这个角色吗？')) return;
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/characters/${id}`, { method: 'DELETE' });
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/characters/${id}`, { method: 'DELETE' });
       setCharacters(characters.filter(c => c.id !== id));
     } catch (err) {
       console.error(err);
     }
   }
 
+  function handleEdit(char: Character, e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setEditingChar(char);
+    setEditForm({ ...char });
+  }
+
+  async function handleSaveEdit() {
+    if (!editingChar) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/characters/${editingChar.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editForm),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCharacters(characters.map(c => c.id === editingChar.id ? { ...c, ...editForm } : c));
+        setEditingChar(null);
+      } else {
+        alert('保存失败: ' + (data.error || '未知错误'));
+      }
+    } catch (err) {
+      alert('保存失败');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   const list = filter ? characters.filter(c => c.role === filter) : characters;
-  const roles = ['主角', '女主', '反派', '配角', '导师', '伙伴'];
 
   if (!mounted) return null;
 
   return (
     <div style={{ background: '#0f0f12', minHeight: '100vh', color: '#e4e4e7' }}>
-      {/* Header without nav tabs */}
-      <header style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 64, background: 'rgba(15,15,18,0.85)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.06)', zIndex: 9999 }}>
+      {/* Header */}
+      <header style={{
+        width: '100%', position: 'fixed', top: 0, left: 0, zIndex: 9999,
+        background: 'rgba(15, 15, 18, 0.9)',
+        backdropFilter: 'blur(20px)',
+        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        height: 64
+      }}>
         <div style={{ maxWidth: 1152, margin: '0 auto', height: '100%', position: 'relative', padding: '0 24px' }}>
-          <Link href="/" legacyBehavior>
-            <span style={{ position: 'absolute', left: 24, top: 0, height: '100%', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-              <span style={{ fontSize: 14, color: '#71717a' }}>← 返回</span>
-            </span>
-          </Link>
-          <h1 style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', fontSize: 18, fontWeight: 600, color: 'white' }}>角色建模</h1>
+          <div style={{ position: 'absolute', left: 24, top: 0, height: '100%', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Link href="/" legacyBehavior>
+              <a className="flex items-center gap-2 cursor-pointer">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #7c6af0, #6b5ce7)' }}>
+                  <span className="text-white font-bold text-sm">睿</span>
+                </div>
+                <span className="font-medium text-white">明睿创作</span>
+              </a>
+            </Link>
+          </div>
+          <nav className="flex items-center gap-1" style={{ position: 'absolute', left: '50%', top: 0, height: '100%', transform: 'translateX(-50%)' }}>
+            {[
+              { name: '首页', href: '/' },
+              { name: '作品', href: '/works' },
+              { name: '创作', href: '/editor' },
+              { name: '角色', href: '/characters', active: true },
+              { name: '世界观', href: '/world' },
+            ].map((tab) => (
+              <Link key={tab.name} href={tab.href} legacyBehavior>
+                <a className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  tab.active ? 'text-white' : 'text-gray-400 hover:text-white'
+                }`}
+                style={tab.active ? { background: 'rgba(124,106,240,0.15)' } : {}}>
+                  {tab.name}
+                </a>
+              </Link>
+            ))}
+          </nav>
         </div>
       </header>
 
       <main style={{ maxWidth: 1152, margin: '0 auto', padding: '80px 24px 48px' }}>
+        {/* Title Bar */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-          <p style={{ fontSize: 14, color: '#71717a' }}>创建和管理你的故事角色</p>
+          <div>
+            <h1 style={{ fontSize: 24, fontWeight: 600, marginBottom: 4, color: 'white' }}>角色建模</h1>
+            <p style={{ fontSize: 14, color: '#71717a' }}>构建立体人物档案</p>
+          </div>
           <Link href="/characters/new" legacyBehavior>
             <span style={{ padding: '10px 20px', borderRadius: 8, background: '#7c6af0', color: 'white', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>+ 创建角色</span>
           </Link>
         </div>
 
+        {/* Filter Tabs */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
           <button onClick={() => setFilter('')} style={{ padding: '8px 16px', borderRadius: 8, fontSize: 14, cursor: 'pointer', border: 'none', ...(filter === '' ? { background: 'rgba(124,106,240,0.15)', color: '#7c6af0' } : { background: '#1c1c24', color: '#a1a1aa' }) }}>全部</button>
           {roles.map(r => (
@@ -90,6 +167,7 @@ export default function CharactersPage() {
           ))}
         </div>
 
+        {/* Characters Grid */}
         {loading ? (
           <div style={{ textAlign: 'center', padding: 48, color: '#71717a' }}>加载中...</div>
         ) : list.length === 0 ? (
@@ -124,9 +202,7 @@ export default function CharactersPage() {
                   </div>
                 )}
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <Link href={`/characters/${c.id}`} legacyBehavior>
-                    <span style={{ flex: 1, padding: '8px 12px', borderRadius: 8, textAlign: 'center', fontSize: 14, background: '#1c1c24', color: '#a1a1aa', border: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer' }}>编辑</span>
-                  </Link>
+                  <button onClick={(e) => handleEdit(c, e)} style={{ flex: 1, padding: '8px 12px', borderRadius: 8, textAlign: 'center', fontSize: 14, background: '#1c1c24', color: '#a1a1aa', border: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer' }}>编辑</button>
                   <button onClick={() => deleteChar(c.id)} style={{ padding: '8px 12px', borderRadius: 8, fontSize: 14, background: 'rgba(239,68,68,0.1)', color: '#ef4444', cursor: 'pointer', border: 'none' }}>删除</button>
                 </div>
               </div>
@@ -134,6 +210,87 @@ export default function CharactersPage() {
           </div>
         )}
       </main>
+
+      {/* Edit Modal */}
+      {editingChar && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.8)',
+            zIndex: 10000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+          onClick={() => setEditingChar(null)}
+        >
+          <div
+            className="rounded-xl p-6 w-full max-w-2xl"
+            style={{ background: '#1a1a1f', border: '1px solid rgba(255,255,255,0.1)', maxHeight: '90vh', overflow: 'auto' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 20, color: 'white' }}>编辑角色</h2>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16, marginBottom: 16 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 12, color: '#71717a', marginBottom: 8 }}>姓名</label>
+                <input type="text" value={editForm.name || ''} onChange={e => setEditForm({ ...editForm, name: e.target.value })} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, fontSize: 14, background: '#25252a', border: '1px solid rgba(255,255,255,0.1)', color: 'white', outline: 'none' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 12, color: '#71717a', marginBottom: 8 }}>定位</label>
+                <select value={editForm.role || ''} onChange={e => setEditForm({ ...editForm, role: e.target.value })} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, fontSize: 14, background: '#25252a', border: '1px solid rgba(255,255,255,0.1)', color: 'white', outline: 'none' }}>
+                  {roles.map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 12, color: '#71717a', marginBottom: 8 }}>年龄</label>
+                <input type="text" value={editForm.age || ''} onChange={e => setEditForm({ ...editForm, age: e.target.value })} placeholder="如：28岁" style={{ width: '100%', padding: '10px 12px', borderRadius: 8, fontSize: 14, background: '#25252a', border: '1px solid rgba(255,255,255,0.1)', color: 'white', outline: 'none' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 12, color: '#71717a', marginBottom: 8 }}>性别</label>
+                <select value={editForm.gender || ''} onChange={e => setEditForm({ ...editForm, gender: e.target.value })} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, fontSize: 14, background: '#25252a', border: '1px solid rgba(255,255,255,0.1)', color: 'white', outline: 'none' }}>
+                  <option value="">选择性别</option>
+                  {genders.map(g => <option key={g} value={g}>{g}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', fontSize: 12, color: '#71717a', marginBottom: 8 }}>性格特点</label>
+              <textarea value={editForm.personality || ''} onChange={e => setEditForm({ ...editForm, personality: e.target.value })} rows={3} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, fontSize: 14, background: '#25252a', border: '1px solid rgba(255,255,255,0.1)', color: 'white', outline: 'none', resize: 'vertical' }} />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16, marginBottom: 16 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 12, color: '#71717a', marginBottom: 8 }}>目标动机</label>
+                <textarea value={editForm.goals || ''} onChange={e => setEditForm({ ...editForm, goals: e.target.value })} rows={2} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, fontSize: 14, background: '#25252a', border: '1px solid rgba(255,255,255,0.1)', color: 'white', outline: 'none', resize: 'vertical' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 12, color: '#71717a', marginBottom: 8 }}>隐藏秘密</label>
+                <textarea value={editForm.secrets || ''} onChange={e => setEditForm({ ...editForm, secrets: e.target.value })} rows={2} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, fontSize: 14, background: '#25252a', border: '1px solid rgba(255,255,255,0.1)', color: 'white', outline: 'none', resize: 'vertical' }} />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                onClick={() => setEditingChar(null)}
+                style={{ flex: 1, padding: '12px 24px', borderRadius: 8, fontSize: 14, fontWeight: 500, background: 'rgba(255,255,255,0.05)', color: '#a1a1aa', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}
+              >
+                取消
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={saving}
+                style={{ flex: 1, padding: '12px 24px', borderRadius: 8, fontSize: 14, fontWeight: 500, background: '#7c6af0', color: 'white', border: 'none', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.6 : 1 }}
+              >
+                {saving ? '保存中...' : '保存'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

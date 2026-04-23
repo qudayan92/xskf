@@ -98,11 +98,19 @@ const Editor: React.FC = () => {
   const wordCount = activeChapter.content.replace(/\s/g, '').length;
   const charCount = activeChapter.content.length;
 
-  // Fetch novel info and chapters when novelId changes
+// Fetch novel info and chapters when novelId changes
   useEffect(() => {
     if (novelId && typeof novelId === 'string') {
       fetchNovelInfo(novelId);
       fetchNovelChapters(novelId);
+    } else {
+      // No novelId, just set clientOnly to true and load defaults
+      setClientOnly(true);
+      fetchAgents();
+      fetchComments();
+      const saved = loadChapters('default');
+      setChapters(saved);
+      setActiveChapterId(saved.find(c => c.active)?.id || saved[0].id);
     }
   }, [novelId]);
 
@@ -147,10 +155,7 @@ const Editor: React.FC = () => {
       const saved = loadChapters(bid);
       setChapters(saved);
       setActiveChapterId(saved.find(c => c.active)?.id || saved[0].id);
-      setClientOnly(true);
     }
-    fetchAgents();
-    fetchComments();
   };
 
   useEffect(() => {

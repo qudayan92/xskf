@@ -132,11 +132,12 @@ const Works: React.FC = () => {
                     project: { name: pname, genre, summary },
                     novel: { title, author_id }
                   });
-                  if (res.data?.data) {
+                  const resData = res.data;
+                  if (resData?.success && resData?.data) {
                     fetchNovels();
                     alert('统一创建成功');
                   } else {
-                    alert('统一创建失败：无返回数据');
+                    alert('统一创建失败: ' + (resData?.error || '无返回数据'));
                   }
                 } catch (e: any) {
                   console.error('Unified create error:', e);

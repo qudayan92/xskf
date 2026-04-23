@@ -51,9 +51,24 @@ const CreateWizard: React.FC = () => {
         }),
       });
       const result = await res.json();
-      if (result.success) {
-        router.push(`/editor?novelId=${result.data.book_id}`);
+      if (!result.success) {
+        console.error('Create failed:', result.error);
+        alert('创建失败: ' + (result.error || '未知错误'));
+        return;
       }
+      const novelData = result.data;
+      if (!novelData) {
+        console.error('Create failed: no data returned');
+        alert('创建失败：无返回数据');
+        return;
+      }
+      const bookId = novelData.book_id;
+      if (!bookId) {
+        console.error('Create failed: book_id is missing');
+        alert('创建失败：book_id缺失');
+        return;
+      }
+      router.push(`/editor?novelId=${bookId}`);
     } catch (err) {
       console.error('Create failed:', err);
       alert('创建失败，请重试');

@@ -601,7 +601,6 @@ const Editor: React.FC = () => {
           visible={showOutline}
           onClose={() => setShowOutline(false)}
           onChaptersApply={(newChapters) => {
-            // Apply chapters from outline generator to editor
             const formattedChapters: Chapter[] = newChapters.map((ch, idx) => ({
               id: Math.max(...chapters.map(c => c.id), 0) + idx + 1,
               title: `第${ch.chapter}章：${ch.title}`,
@@ -609,12 +608,12 @@ const Editor: React.FC = () => {
               active: false
             }));
             if (formattedChapters.length > 0) {
-              setChapters(prev => {
-                const combined = [...prev, ...formattedChapters];
-                return combined;
-              });
-              alert(`已应用 ${formattedChapters.length} 个章节到编辑器`);
+              setChapters(prev => [...prev, ...formattedChapters]);
             }
+          }}
+          onSave={(data) => {
+            console.log('保存大纲:', data);
+            alert(`大纲已保存\n作品：${data.title}\n类型：${data.genre}\n章节数：${data.outline.chapterCount || 0}\n已生成标题：${data.chapters?.length || 0} 章`);
           }}
         />
       )}

@@ -600,6 +600,22 @@ const Editor: React.FC = () => {
         <OutlineGenerator
           visible={showOutline}
           onClose={() => setShowOutline(false)}
+          onChaptersApply={(newChapters) => {
+            // Apply chapters from outline generator to editor
+            const formattedChapters: Chapter[] = newChapters.map((ch, idx) => ({
+              id: Math.max(...chapters.map(c => c.id), 0) + idx + 1,
+              title: `第${ch.chapter}章：${ch.title}`,
+              content: '',
+              active: false
+            }));
+            if (formattedChapters.length > 0) {
+              setChapters(prev => {
+                const combined = [...prev, ...formattedChapters];
+                return combined;
+              });
+              alert(`已应用 ${formattedChapters.length} 个章节到编辑器`);
+            }
+          }}
         />
       )}
 

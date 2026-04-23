@@ -7,6 +7,7 @@ interface Props {
   visible: boolean;
   novelId?: number;
   onClose: () => void;
+  onChaptersApply?: (chapters: any[]) => void;
 }
 
 interface Outline {
@@ -18,7 +19,7 @@ interface Outline {
   climax?: string;
 }
 
-const OutlineGenerator: React.FC<Props> = ({ visible, onClose }) => {
+const OutlineGenerator: React.FC<Props> = ({ visible, onClose, onChaptersApply }) => {
   const [mounted, setMounted] = useState(false);
   const [title, setTitle] = useState('');
   const [genre, setGenre] = useState('科幻');
@@ -220,7 +221,10 @@ const OutlineGenerator: React.FC<Props> = ({ visible, onClose }) => {
             onClose={() => setShowChapterTitles(false)}
             onApply={(chapters) => {
               console.log('应用章节标题:', chapters);
-              alert(`已应用 ${chapters.length} 个章节标题`);
+              if (onChaptersApply) {
+                onChaptersApply(chapters);
+              }
+              setShowChapterTitles(false);
             }}
           />
         )}

@@ -8,6 +8,7 @@ interface Props {
   novelId?: number;
   onClose: () => void;
   onChaptersApply?: (chapters: any[]) => void;
+  onSave?: (data: { title: string; genre: string; outline: Outline; chapters?: any[] }) => void;
 }
 
 interface Outline {
@@ -19,15 +20,17 @@ interface Outline {
   climax?: string;
 }
 
-const OutlineGenerator: React.FC<Props> = ({ visible, onClose, onChaptersApply }) => {
+const OutlineGenerator: React.FC<Props> = ({ visible, onClose, onChaptersApply, onSave }) => {
   const [mounted, setMounted] = useState(false);
   const [title, setTitle] = useState('');
   const [genre, setGenre] = useState('科幻');
   const [summary, setSummary] = useState('');
   const [loading, setLoading] = useState(false);
   const [outline, setOutline] = useState<Outline | null>(null);
+  const [chapters, setChapters] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'structure' | 'plot' | 'details'>('structure');
   const [showChapterTitles, setShowChapterTitles] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -63,6 +66,23 @@ const OutlineGenerator: React.FC<Props> = ({ visible, onClose, onChaptersApply }
     }
     setLoading(false);
   }, [title, genre, summary]);
+
+  const handleSave = useCallback(() => {
+    if (onSave && outline) {
+      onSave({ title, genre, outline, chapters });
+      setSaved(true);
+    }
+  }, [title, genre, outline, chapters, onSave]);
+
+  const handleCancel = useCallback(() => {
+    setTitle('');
+    setGenre('科幻');
+    setSummary('');
+    setOutline(null);
+    setChapters([]);
+    setSaved(false);
+    onClose();
+  }, [onClose]);
 
   if (!visible || !mounted) return null;
 
@@ -210,6 +230,45 @@ const OutlineGenerator: React.FC<Props> = ({ visible, onClose, onChaptersApply }
                   </div>
                 </div>
               )}
+
+              {/* Saved Chapters */}
+              {chapters.length > 0 && (
+                <div className="mt-4 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div className="text-xs font-medium mb-2" style={{ color: '#7c6af0' }}>已生成章节标题 ({chapters.length})</div>
+                  <div className="space-y-1 max-h-40 overflow-y-auto">
+                    {chapters.slice(0, 10).map((ch, i) => (
+                      <div key={i} className="flex items-center gap-2 text-xs" style={{ color: '#a1a1aa' }}>
+                        <span style={{ color: '#7c6af0' }}>第{ch.chapter}章</span>
+                        <span>{ch.title}</span>
+                        {ch.hook && <span className="px-1 py-0.5 rounded text-xs" style={{ background: 'rgba(124,106,240,0.2)', color: '#a5b4fc' }}>{ch.hook}</span>}
+                      </div>
+                    ))}
+                    {chapters.length > 10 && (
+                      <div className="text-xs" style={{ color: '#71717a' }}>...还有 {chapters.length - 10} 章</div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          {outline && (
+            <div className="flex gap-3 mt-6 px-6 pb-6">
+              <button
+                onClick={handleCancel}
+                className="flex-1 px-6 py-3 rounded-xl text-sm font-medium transition-all"
+                style={{ background: 'rgba(255,255,255,0.05)', color: '#a1a1aa', border: '1px solid rgba(255,255,255,0.1)' }}
+              >
+                取消
+              </button>
+              <button
+                onClick={handleSave}
+                className="flex-1 px-6 py-3 rounded-xl text-sm font-medium transition-all"
+                style={{ background: '#7c6af0', color: '#fff' }}
+              >
+                保存大纲
+              </button>
             </div>
           )}
         </div>
@@ -219,10 +278,11 @@ const OutlineGenerator: React.FC<Props> = ({ visible, onClose, onChaptersApply }
           <ChapterTitleGenerator
             visible={showChapterTitles}
             onClose={() => setShowChapterTitles(false)}
-            onApply={(chapters) => {
-              console.log('应用章节标题:', chapters);
+            onApply={(newChapters) => {
+              console.log('应用章节标题:', newChapters);
+              setChapters(newChapters);
               if (onChaptersApply) {
-                onChaptersApply(chapters);
+                onChaptersApply(newChapters);
               }
               setShowChapterTitles(false);
             }}

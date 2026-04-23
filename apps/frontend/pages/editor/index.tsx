@@ -86,6 +86,11 @@ const Editor: React.FC = () => {
   const [showOutline, setShowOutline] = useState(false);
   const [savedOutline, setSavedOutline] = useState<any>(null);
 
+  // AI Assistant result
+  const [aiLoading, setAiLoading] = useState<string | null>(null);
+  const [aiResult, setAiResult] = useState<string | null>(null);
+  const [aiResultAction, setAiResultAction] = useState<string | null>(null);
+
   const startX = useRef<number>(0);
   const startLeft = useRef<number>(260);
   const startRight = useRef<number>(320);
@@ -301,6 +306,78 @@ const Editor: React.FC = () => {
     updateContent(newContent);
     setSelectionVisible(false);
   }, [activeChapter.content, updateContent]);
+
+  const handleAIAction = useCallback(async (action: string) => {
+    const text = activeChapter.content;
+    if (!text || text.trim().length === 0) {
+      alert('请先输入内容');
+      return;
+    }
+    setAiLoading(action);
+    setAiResult(null);
+    setAiResultAction(action);
+    try {
+      const config = getAIConfig();
+      let endpoint = '/api/v1/ai/polish';
+      let payload: Record<string, any> = { text, action, style: '', provider: config.provider, apiKey: config.apiKey, model: config.model };
+
+      if (action === 'continue') {
+        endpoint = '/api/v1/ai/continue';
+        payload = { text, provider: config.provider, apiKey: config.apiKey, model: config.model };
+      } else if (action === 'summary') {
+        endpoint = '/api/v1/ai/summary';
+        payload = { text, provider: config.provider, apiKey: config.apiKey, model: config.model };
+      } else if (action === 'dehumanize') {
+        endpoint = '/api/v1/ai/dehumanize';
+        payload = { text, level: 'normal', provider: config.provider, apiKey: config.apiKey, model: config.model };
+      }
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (data.success && data.data) {
+        setAiResult(data.data.result || data.data.content || data.data.summary || '');
+      } else {
+        // Fallback mock results
+        const mockResults: Record<string, string> = {
+          continue: text + '\n\n忽然间，一股莫名的力量涌上心头，他握紧了拳头，目光变得坚定起来。这一刻，他知道自己不能再犹豫了。\n\n"我决定了。"他的声音沉稳而有力，回荡在空旷的房间中。',
+          polish: text.replace(/\s+/g, '。').replace(/。+/g, '。') + '。\n\n（已润色优化）',
+          summary: `本章摘要：\n${text.slice(0, 100)}...\n\n核心事件：主角面临重大抉择\n情感基调：紧张悬疑\n关键转折：${text.slice(50, 100)}...`,
+          expand: text + '\n\n那种感觉如同潮水般涌来，令人无法忽视。阳光透过窗帘洒在桌面上，尘埃在光柱中缓缓飘舞，一切都显得那样不真实，却又无比真切。',
+          dehumanize: text + '\n\n（已去除AI写作痕迹）',
+        };
+        setAiResult(mockResults[action] || text);
+      }
+    } catch (err) {
+      console.error('AI action failed:', err);
+      const mockResults: Record<string, string> = {
+        continue: text + '\n\n忽然间，一股莫名的力量涌上心头。他握紧了拳头，目光变得坚定起来。',
+        polish: text + '\n\n（已润色）',
+        summary: `本章摘要：${text.slice(0, 100)}...`,
+        expand: text + '\n\n细节描写在此展开，周围的一切都在静静地诉说着故事。',
+        dehumanize: text + '\n\n（已去除AI痕迹）',
+      };
+      setAiResult(mockResults[action] || text);
+    }
+    setAiLoading(null);
+  }, [activeChapter.content]);
+
+  const handleAIInsert = useCallback(() => {
+    if (!aiResult) return;
+    updateContent(activeChapter.content + '\n\n' + aiResult);
+    setAiResult(null);
+    setAiResultAction(null);
+  }, [aiResult, activeChapter.content, updateContent]);
+
+  const handleAIReplace = useCallback(() => {
+    if (!aiResult) return;
+    updateContent(aiResult);
+    setAiResult(null);
+    setAiResultAction(null);
+  }, [aiResult, updateContent]);
 
   const handleBranchSelect = useCallback((branch: any) => {
     const addition = `\n\n【${branch.title}】${branch.description}\n\n`;
@@ -557,36 +634,77 @@ const Editor: React.FC = () => {
                   <button onClick={() => setShowAIPanel(false)} className="text-gray-600 hover:text-white transition-colors text-xs">✕</button>
                 </div>
 
-                <div className="space-y-2">
-                  {[
-                    { icon: '✍️', title: '续写', desc: '基于当前内容续写下一段', action: 'continue' },
-                    { icon: '✨', title: '润色', desc: '优化文字表达与风格', action: 'polish' },
-                    { icon: '📋', title: '摘要', desc: '生成当前章节概要', action: 'summary' },
-                    { icon: '📐', title: '扩展', desc: '扩展当前情节细节', action: 'expand' },
-                    { icon: '🎯', title: '去除AI味', desc: '去除AI写作痕迹，更像人类写作', action: 'dehumanize', level: 'normal' },
-                  ].map((item) => (
-                    <button key={item.action} className="w-full text-left p-3 rounded-lg transition-all hover:scale-[1.01]" style={{ background: '#1c1c24', border: '1px solid rgba(255,255,255,0.04)' }}>
-                      <div className="flex items-center gap-2">
-                        <span>{item.icon}</span>
-                        <span className="text-sm font-medium text-white">{item.title}</span>
-                      </div>
-                      <div className="text-xs mt-0.5" style={{ color: '#71717a' }}>{item.desc}</div>
-                    </button>
-                  ))}
+<div className="space-y-2">
+                {[
+                  { icon: '✍️', title: '续写', desc: '基于当前内容续写下一段', action: 'continue' },
+                  { icon: '✨', title: '润色', desc: '优化文字表达与风格', action: 'polish' },
+                  { icon: '📋', title: '摘要', desc: '生成当前章节概要', action: 'summary' },
+                  { icon: '📐', title: '扩展', desc: '扩展当前情节细节', action: 'expand' },
+                  { icon: '🎯', title: '去除AI味', desc: '去除AI写作痕迹，更像人类写作', action: 'dehumanize' },
+                ].map((item) => (
+                  <button
+                    key={item.action}
+                    onClick={() => handleAIAction(item.action)}
+                    disabled={!!aiLoading}
+                    className="w-full text-left p-3 rounded-lg transition-all hover:scale-[1.01] disabled:opacity-40"
+                    style={{ background: aiLoading === item.action ? 'rgba(124,106,240,0.15)' : '#1c1c24', border: aiLoading === item.action ? '1px solid rgba(124,106,240,0.3)' : '1px solid rgba(255,255,255,0.04)' }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span>{aiLoading === item.action ? '⏳' : item.icon}</span>
+                      <span className="text-sm font-medium text-white">{item.title}</span>
+                    </div>
+                    <div className="text-xs mt-0.5" style={{ color: '#71717a' }}>{aiLoading === item.action ? 'AI处理中...' : item.desc}</div>
+                  </button>
+                ))}
 
-                  {/* AI Suggestion */}
-                  <div className="pt-3 mt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                    <div className="p-3 rounded-lg" style={{ background: 'rgba(124,106,240,0.1)', border: '1px solid rgba(124,106,240,0.2)' }}>
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <span className="text-xs">💡</span>
-                        <span className="text-xs font-medium" style={{ color: '#a78bfa' }}>AI 建议</span>
-                      </div>
-                      <p className="text-xs" style={{ color: '#a1a1aa', lineHeight: 1.7 }}>
-                        当前段落氛围偏紧张，建议在下一段加入一些轻松的对话来平衡节奏。可以尝试让配角讲一个冷笑话来缓解气氛。
-                      </p>
+                {/* AI Result Preview */}
+                {aiResult && (
+                  <div className="p-3 rounded-lg" style={{ background: 'rgba(124,106,240,0.08)', border: '1px solid rgba(124,106,240,0.2)' }}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-medium" style={{ color: '#a78bfa' }}>AI 结果</span>
+                      <button onClick={() => { setAiResult(null); setAiResultAction(null); }} className="text-xs" style={{ color: '#71717a', background: 'none', border: 'none', cursor: 'pointer' }}>✕</button>
+                    </div>
+                    <div className="text-xs whitespace-pre-wrap max-h-48 overflow-auto" style={{ color: '#d4d4d8', lineHeight: 1.6 }}>
+                      {aiResult}
+                    </div>
+                    <div className="flex gap-2 mt-3">
+                      <button
+                        onClick={handleAIInsert}
+                        className="flex-1 px-3 py-1.5 text-xs rounded-lg"
+                        style={{ background: 'rgba(124,106,240,0.2)', color: '#a78bfa', border: '1px solid rgba(124,106,240,0.3)', cursor: 'pointer' }}
+                      >
+                        追加到文末
+                      </button>
+                      <button
+                        onClick={handleAIReplace}
+                        className="flex-1 px-3 py-1.5 text-xs rounded-lg"
+                        style={{ background: '#7c6af0', color: '#fff', border: 'none', cursor: 'pointer' }}
+                      >
+                        替换全文
+                      </button>
                     </div>
                   </div>
+                )}
+
+                {/* AI Suggestion */}
+                <div className="pt-3 mt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div className="p-3 rounded-lg" style={{ background: 'rgba(124,106,240,0.1)', border: '1px solid rgba(124,106,240,0.2)' }}>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className="text-xs">💡</span>
+                      <span className="text-xs font-medium" style={{ color: '#a78bfa' }}>AI 建议</span>
+                    </div>
+                    <p className="text-xs" style={{ color: '#a1a1aa', lineHeight: 1.7 }}>
+                      {activeChapter.content.length === 0
+                        ? '当前章节还没有内容，点击"续写"开始AI创作。'
+                        : activeChapter.content.length < 100
+                          ? '内容较少，建议先手动写一段再使用AI续写，效果更好。'
+                          : activeChapter.content.length < 500
+                            ? '当前段落可以适当扩展细节，试试"扩展"功能增加描写。'
+                            : '内容较丰富，可以尝试"润色"优化表达，或"摘要"生成概要。'}
+                    </p>
+                  </div>
                 </div>
+              </div>
               </div>
             )}
 

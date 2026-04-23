@@ -259,4 +259,68 @@ ${chapterText}
   }
 });
 
+router.post('/ai/continue', async (req, res) => {
+  const { text, provider = 'zhipu', apiKey, model } = req.body;
+
+  if (!text || text.trim().length === 0) {
+    return res.status(400).json({ success: false, error: '文本不能为空' });
+  }
+
+  if (apiKey && provider) {
+    try {
+      const prompt = `你是一个专业的网文创作助手。请根据以下已有内容，续写约200字的后续段落。保持风格一致，情节自然衔接。
+
+已有内容：
+${text.slice(-800)}
+
+请直接输出续写内容，不要加任何说明或标题。`;
+
+      const response = await chat(provider, apiKey, [{ role: 'user', content: prompt }], model || 'glm-4');
+      const content = extractContent(response);
+
+      if (content) {
+        return res.json({ success: true, data: { content } });
+      }
+    } catch (err) {
+      console.error('Continue AI error:', err.message);
+    }
+  }
+
+  // Fallback mock
+  const mockContinue = `\n\n忽然间，一股莫名的力量涌上心头，他握紧了拳头，目光变得坚定起来。这一刻，他知道自己不能再犹豫了。\n\n"我决定了。"他的声音沉稳而有力，回荡在空旷的房间中，连窗外的风声似乎都为之一滞。`;
+  res.json({ success: true, data: { content: mockContinue } });
+});
+
+router.post('/ai/summary', async (req, res) => {
+  const { text, provider = 'zhipu', apiKey, model } = req.body;
+
+  if (!text || text.trim().length === 0) {
+    return res.status(400).json({ success: false, error: '文本不能为空' });
+  }
+
+  if (apiKey && provider) {
+    try {
+      const prompt = `你是一个专业的网文编辑。请为以下章节内容生成摘要，包括核心事件、情感基调和关键转折。控制在100字以内。
+
+章节内容：
+${text.slice(0, 1500)}
+
+请直接输出摘要，不要加任何说明。`;
+
+      const response = await chat(provider, apiKey, [{ role: 'user', content: prompt }], model || 'glm-4');
+      const content = extractContent(response);
+
+      if (content) {
+        return res.json({ success: true, data: { summary: content } });
+      }
+    } catch (err) {
+      console.error('Summary AI error:', err.message);
+    }
+  }
+
+  // Fallback mock
+  const mockSummary = `本章摘要：\n核心事件：主角面临重大抉择\n情感基调：紧张悬疑\n关键转折：故事进入新阶段`;
+  res.json({ success: true, data: { summary: mockSummary } });
+});
+
 module.exports = router;

@@ -58,6 +58,7 @@ const Editor: React.FC = () => {
   const [chapters, setChapters] = useState<Chapter[]>(defaultChapters);
   const [activeChapterId, setActiveChapterId] = useState(1);
   const [focusMode, setFocusMode] = useState(false);
+  const [focusTransition, setFocusTransition] = useState(false);
   const [showAIPanel, setShowAIPanel] = useState(true);
   const [leftWidth, setLeftWidth] = useState(260);
   const [rightWidth, setRightWidth] = useState(320);
@@ -99,6 +100,15 @@ const Editor: React.FC = () => {
 
   const fetchAgents = useStore(s => s.fetchAgents);
   const fetchComments = useStore(s => s.fetchComments);
+
+  useEffect(() => {
+    if (focusMode) {
+      const t = setTimeout(() => setFocusTransition(true), 50);
+      return () => clearTimeout(t);
+    } else {
+      setFocusTransition(false);
+    }
+  }, [focusMode]);
 
   const activeChapter = chapters.find(c => c.id === activeChapterId) || chapters[0];
   const wordCount = activeChapter.content.replace(/\s/g, '').length;
@@ -398,55 +408,68 @@ const Editor: React.FC = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col" style={{ background: '#0f0f12', color: '#e4e4e7' }}>
+    <div className="h-screen flex flex-col" style={{ background: focusMode ? '#08080c' : '#0f0f12', color: '#e4e4e7', transition: 'background 0.6s cubic-bezier(0.4, 0, 0.2, 1)' }}>
       {/* Header */}
-      <header className="flex items-center justify-between px-6 h-14 flex-shrink-0" style={{ background: '#16161c', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+      <header className="flex items-center justify-between px-6 h-14 flex-shrink-0" style={{ background: focusMode ? 'rgba(8,8,12,0.98)' : '#16161c', borderBottom: focusMode ? '1px solid rgba(124,106,240,0.06)' : '1px solid rgba(255,255,255,0.06)', transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)' }}>
         <div className="flex items-center gap-4">
-          <Link href="/" legacyBehavior>
-            <a className="flex items-center gap-2 cursor-pointer">
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #7c6af0, #6b5ce7)' }}>
-                <span className="text-white font-bold text-xs">睿</span>
-              </div>
-              <span className="text-sm font-medium text-white">明睿创作</span>
-            </a>
-          </Link>
-          <span style={{ color: '#52525b' }}>|</span>
-          <span className="text-sm" style={{ color: '#71717a' }}>{novelInfo?.title || '星际流光'}</span>
+          <div style={{ opacity: focusMode ? 0 : 1, maxWidth: focusMode ? 0 : 400, overflow: 'hidden', transition: 'opacity 0.3s ease, max-width 0.5s cubic-bezier(0.4, 0, 0.2, 1)', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 16 }}>
+            <Link href="/" legacyBehavior>
+              <a className="flex items-center gap-2 cursor-pointer">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #7c6af0, #6b5ce7)' }}>
+                  <span className="text-white font-bold text-xs">睿</span>
+                </div>
+                <span className="text-sm font-medium text-white">明睿创作</span>
+              </a>
+            </Link>
+            <span style={{ color: '#52525b' }}>|</span>
+            <span className="text-sm" style={{ color: '#71717a' }}>{novelInfo?.title || '星际流光'}</span>
+          </div>
+          <span className="text-sm font-medium" style={{ color: '#a1a1aa', opacity: focusMode ? 1 : 0, maxWidth: focusMode ? 300 : 0, overflow: 'hidden', transition: 'opacity 0.4s ease 0.2s, max-width 0.5s cubic-bezier(0.4, 0, 0.2, 1)', whiteSpace: 'nowrap' }}>
+            {novelInfo?.title || '星际流光'}
+          </span>
         </div>
 
         <div className="flex items-center gap-2">
+          <div style={{ opacity: focusMode ? 0 : 1, maxWidth: focusMode ? 0 : 200, overflow: 'hidden', transition: 'opacity 0.3s ease, max-width 0.5s cubic-bezier(0.4, 0, 0.2, 1)', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <button onClick={handleUndo} className="p-1.5 rounded-lg hover:bg-white/5 transition-colors" style={{ color: '#71717a' }} title="撤销">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+            </button>
+            <button onClick={handleRedo} className="p-1.5 rounded-lg hover:bg-white/5 transition-colors" style={{ color: '#71717a' }} title="重做">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M21 10H11a8 8 0 00-8 8v2m18-10l-6 6m6-6l-6-6"/></svg>
+            </button>
+            <button
+              onClick={() => { setAIConfig(getAIConfig()); setShowAIConfig(true); }}
+              className="p-1.5 rounded-lg hover:bg-white/5 transition-colors"
+              style={{ color: isMockMode() ? '#f59e0b' : '#22c55e' }}
+              title="AI配置"
+            >
+              {isMockMode() ? '🤖' : '🌐'}
+            </button>
+          </div>
+          <div style={{ opacity: focusMode ? 0.6 : 1, transition: 'opacity 0.4s ease' }}>
+            <button onClick={handleSave} className="px-4 py-1.5 text-sm font-medium rounded-lg transition-all" style={{ background: saved ? '#22c55e' : '#7c6af0', color: '#fff' }}>
+              {saved ? `已保存 ${saveTime}` : '保存中...'}
+            </button>
+          </div>
           <button
             onClick={() => setFocusMode(!focusMode)}
             className="text-xs px-3 py-1.5 rounded-lg transition-all"
-            style={{ background: focusMode ? 'rgba(124,106,240,0.15)' : 'transparent', color: focusMode ? '#7c6af0' : '#71717a', border: '1px solid ' + (focusMode ? 'rgba(124,106,240,0.3)' : 'transparent') }}
+            style={{
+              background: focusMode ? 'rgba(124,106,240,0.15)' : 'transparent',
+              color: focusMode ? '#a78bfa' : '#71717a',
+              border: '1px solid ' + (focusMode ? 'rgba(124,106,240,0.3)' : 'rgba(255,255,255,0.1)'),
+              boxShadow: focusMode ? '0 0 12px rgba(124,106,240,0.15)' : 'none',
+            }}
           >
-            {focusMode ? '退出专注' : '专注模式'}
-          </button>
-          <button onClick={handleUndo} className="p-1.5 rounded-lg hover:bg-white/5 transition-colors" style={{ color: '#71717a' }} title="撤销">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
-          </button>
-          <button onClick={handleRedo} className="p-1.5 rounded-lg hover:bg-white/5 transition-colors" style={{ color: '#71717a' }} title="重做">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M21 10H11a8 8 0 00-8 8v2m18-10l-6 6m6-6l-6-6"/></svg>
-          </button>
-          <button
-            onClick={() => { setAIConfig(getAIConfig()); setShowAIConfig(true); }}
-            className="p-1.5 rounded-lg hover:bg-white/5 transition-colors"
-            style={{ color: isMockMode() ? '#f59e0b' : '#22c55e' }}
-            title="AI配置"
-          >
-            {isMockMode() ? '🤖' : '🌐'}
-          </button>
-          <button onClick={handleSave} className="px-4 py-1.5 text-sm font-medium rounded-lg transition-all" style={{ background: saved ? '#22c55e' : '#7c6af0', color: '#fff' }}>
-            {saved ? `已保存 ${saveTime}` : '保存中...'}
+            {focusMode ? '✕ 退出专注' : '🔒 专注'}
           </button>
         </div>
       </header>
 
       {/* Main Layout */}
-      <div className="flex-1 min-h-0" style={{ position: 'relative', display: 'grid', gridTemplateColumns: focusMode ? '0px 1fr 0px' : `${leftWidth}px 1fr ${rightWidth}px`, transition: 'grid-template-columns 0.3s ease' }}>
+      <div className="flex-1 min-h-0" style={{ position: 'relative', display: 'grid', gridTemplateColumns: focusMode ? '0px 1fr 0px' : `${leftWidth}px 1fr ${rightWidth}px`, transition: 'grid-template-columns 0.5s cubic-bezier(0.4, 0, 0.2, 1)' }}>
         {/* Left Sidebar */}
-        {!focusMode && (
-          <aside className="overflow-y-auto" style={{ background: '#16161c', borderRight: '1px solid rgba(255,255,255,0.06)', width: leftWidth }}>
+        <aside className="overflow-y-auto overflow-x-hidden" style={{ background: '#16161c', borderRight: '1px solid rgba(255,255,255,0.06)', width: leftWidth, opacity: focusMode ? 0 : 1, transition: 'opacity 0.3s ease', pointerEvents: focusMode ? 'none' : 'auto' }}>
             <div className="p-4 border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
               <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">章节</div>
               {chapters.map((ch) => (
@@ -518,82 +541,85 @@ const Editor: React.FC = () => {
                   </div>
                 ))
               )}
-            </div>
-          </aside>
-        )}
+        </div>
+        </aside>
 
         {/* Editor Area */}
         <main className="flex flex-col min-h-0">
           {/* Toolbar */}
-          <div className="flex items-center gap-1 px-6 py-2 flex-shrink-0" style={{ background: '#16161c', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-            <button onClick={() => insertFormat('**', '**')} className="px-2 py-1 rounded text-xs font-bold hover:bg-white/5 transition-colors" style={{ color: '#a1a1aa' }} title="加粗">B</button>
-            <button onClick={() => insertFormat('*', '*')} className="px-2 py-1 rounded text-xs italic hover:bg-white/5 transition-colors" style={{ color: '#a1a1aa' }} title="斜体">I</button>
-            <button onClick={() => insertFormat('__', '__')} className="px-2 py-1 rounded text-xs underline hover:bg-white/5 transition-colors" style={{ color: '#a1a1aa' }} title="下划线">U</button>
-            <div className="w-px h-4 mx-1" style={{ background: 'rgba(255,255,255,0.08)' }} />
-            <button onClick={() => insertFormat('# ', '')} className="px-2 py-1 rounded text-xs font-bold hover:bg-white/5 transition-colors" style={{ color: '#a1a1aa' }}>H1</button>
-            <button onClick={() => insertFormat('## ', '')} className="px-2 py-1 rounded text-xs font-bold hover:bg-white/5 transition-colors" style={{ color: '#a1a1aa' }}>H2</button>
-            <button onClick={() => insertFormat('### ', '')} className="px-2 py-1 rounded text-xs font-bold hover:bg-white/5 transition-colors" style={{ color: '#a1a1aa' }}>H3</button>
-            <div className="w-px h-4 mx-1" style={{ background: 'rgba(255,255,255,0.08)' }} />
+          <div className="flex items-center gap-1 px-6 py-2 flex-shrink-0" style={{ background: '#16161c', borderBottom: '1px solid rgba(255,255,255,0.06)', maxHeight: focusMode ? 0 : 40, opacity: focusMode ? 0 : 1, overflow: 'hidden', transition: 'max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease' }}>
+              <button onClick={() => insertFormat('**', '**')} className="px-2 py-1 rounded text-xs font-bold hover:bg-white/5 transition-colors" style={{ color: '#a1a1aa' }} title="加粗">B</button>
+              <button onClick={() => insertFormat('*', '*')} className="px-2 py-1 rounded text-xs italic hover:bg-white/5 transition-colors" style={{ color: '#a1a1aa' }} title="斜体">I</button>
+              <button onClick={() => insertFormat('__', '__')} className="px-2 py-1 rounded text-xs underline hover:bg-white/5 transition-colors" style={{ color: '#a1a1aa' }} title="下划线">U</button>
+              <div className="w-px h-4 mx-1" style={{ background: 'rgba(255,255,255,0.08)' }} />
+              <button onClick={() => insertFormat('# ', '')} className="px-2 py-1 rounded text-xs font-bold hover:bg-white/5 transition-colors" style={{ color: '#a1a1aa' }}>H1</button>
+              <button onClick={() => insertFormat('## ', '')} className="px-2 py-1 rounded text-xs font-bold hover:bg-white/5 transition-colors" style={{ color: '#a1a1aa' }}>H2</button>
+              <button onClick={() => insertFormat('### ', '')} className="px-2 py-1 rounded text-xs font-bold hover:bg-white/5 transition-colors" style={{ color: '#a1a1aa' }}>H3</button>
+              <div className="w-px h-4 mx-1" style={{ background: 'rgba(255,255,255,0.08)' }} />
 
-            {/* AI Feature Buttons */}
-            <button
-              onClick={() => setShowBranch(true)}
-              className="px-3 py-1 rounded-lg text-xs font-medium transition-all hover:opacity-80"
-              style={{ background: 'rgba(124,106,240,0.12)', color: '#a78bfa', border: '1px solid rgba(124,106,240,0.2)' }}
-              title="剧情推演"
-            >
-              🎭 推演
-            </button>
-            <button
-              onClick={() => setShowLogic(true)}
-              className="px-3 py-1 rounded-lg text-xs font-medium transition-all hover:opacity-80"
-              style={{ background: logicIssues > 0 ? 'rgba(245,158,11,0.12)' : 'rgba(34,197,94,0.12)', color: logicIssues > 0 ? '#f59e0b' : '#22c55e', border: `1px solid ${logicIssues > 0 ? 'rgba(245,158,11,0.2)' : 'rgba(34,197,94,0.2)'}` }}
-              title="逻辑检测"
-            >
-              {logicIssues > 0 ? `⚠️ ${logicIssues}问题` : '✅ 逻辑'}
-            </button>
-            <button
-              onClick={() => setShowOutline(true)}
-              className="px-3 py-1 rounded-lg text-xs font-medium transition-all hover:opacity-80"
-              style={{ background: 'rgba(139,92,246,0.12)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.2)' }}
-              title="智能大纲"
-            >
-              📋 大纲
-            </button>
+              {/* AI Feature Buttons */}
+              <button
+                onClick={() => setShowBranch(true)}
+                className="px-3 py-1 rounded-lg text-xs font-medium transition-all hover:opacity-80"
+                style={{ background: 'rgba(124,106,240,0.12)', color: '#a78bfa', border: '1px solid rgba(124,106,240,0.2)' }}
+                title="剧情推演"
+              >
+                🎭 推演
+              </button>
+              <button
+                onClick={() => setShowLogic(true)}
+                className="px-3 py-1 rounded-lg text-xs font-medium transition-all hover:opacity-80"
+                style={{ background: logicIssues > 0 ? 'rgba(245,158,11,0.12)' : 'rgba(34,197,94,0.12)', color: logicIssues > 0 ? '#f59e0b' : '#22c55e', border: `1px solid ${logicIssues > 0 ? 'rgba(245,158,11,0.2)' : 'rgba(34,197,94,0.2)'}` }}
+                title="逻辑检测"
+              >
+                {logicIssues > 0 ? `⚠️ ${logicIssues}问题` : '✅ 逻辑'}
+              </button>
+              <button
+                onClick={() => setShowOutline(true)}
+                className="px-3 py-1 rounded-lg text-xs font-medium transition-all hover:opacity-80"
+                style={{ background: 'rgba(139,92,246,0.12)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.2)' }}
+                title="智能大纲"
+              >
+                📋 大纲
+              </button>
 
-            <div className="flex-1" />
-            <span className="text-xs" style={{ color: '#7c6af0' }}>第 {activeChapterId} 章</span>
-            <span className="mx-2" style={{ color: '#52525b' }}>|</span>
-            <span className="text-xs" style={{ color: '#a1a1aa' }}>{wordCount.toLocaleString()} 字</span>
+              <div className="flex-1" />
+              <span className="text-xs" style={{ color: '#7c6af0' }}>第 {activeChapterId} 章</span>
+              <span className="mx-2" style={{ color: '#52525b' }}>|</span>
+          <span className="text-xs" style={{ color: '#a1a1aa' }}>{wordCount.toLocaleString()} 字</span>
           </div>
 
           {/* Editor Content */}
-          <div className="flex-1 overflow-y-auto px-16 py-12 relative" onClick={() => setSelectionVisible(false)}>
-            <textarea
-              ref={textareaRef}
-              value={activeChapter.content}
-              onChange={(e) => updateContent(e.target.value)}
-              onSelect={handleTextSelect}
-              onMouseUp={handleTextSelect}
-              onKeyDown={(e) => {
-                if (e.ctrlKey || e.metaKey) {
-                  if (e.key === 'b') { e.preventDefault(); insertFormat('**', '**'); }
-                  else if (e.key === 'i') { e.preventDefault(); insertFormat('*', '*'); }
-                  else if (e.key === 'u') { e.preventDefault(); insertFormat('__', '__'); }
-                  else if (e.key === 's') { e.preventDefault(); handleSave(); }
-                }
-              }}
-              className="w-full resize-none outline-none bg-transparent"
-              style={{
-                fontFamily: "'Source Serif Pro', Georgia, serif",
-                fontSize: 17,
-                lineHeight: 1.9,
-                color: '#e4e4e7',
-                letterSpacing: '0.3px',
-                minHeight: '100%',
-              }}
-              placeholder="开始你的创作... 选中文字可使用AI润色"
-            />
+          <div className="flex-1 overflow-y-auto relative" onClick={() => setSelectionVisible(false)} style={{ padding: focusMode ? '64px 32px' : '48px 64px', transition: 'padding 0.6s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+          <div style={{ maxWidth: focusMode ? 640 : 900, margin: '0 auto', transition: 'max-width 0.6s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+              <textarea
+                ref={textareaRef}
+                value={activeChapter.content}
+                onChange={(e) => updateContent(e.target.value)}
+                onSelect={handleTextSelect}
+                onMouseUp={handleTextSelect}
+                onKeyDown={(e) => {
+                  if (e.ctrlKey || e.metaKey) {
+                    if (e.key === 'b') { e.preventDefault(); insertFormat('**', '**'); }
+                    else if (e.key === 'i') { e.preventDefault(); insertFormat('*', '*'); }
+                    else if (e.key === 'u') { e.preventDefault(); insertFormat('__', '__'); }
+                    else if (e.key === 's') { e.preventDefault(); handleSave(); }
+                  }
+                  if (focusMode && e.key === 'Escape') { setFocusMode(false); }
+                }}
+          className="w-full resize-none outline-none bg-transparent"
+            style={{
+              fontFamily: focusMode ? "'Source Serif Pro', Georgia, serif" : "'Source Serif Pro', Georgia, serif",
+              fontSize: focusMode ? 21 : 17,
+              lineHeight: focusMode ? 2.4 : 1.9,
+              color: focusMode ? '#c8c8cd' : '#e4e4e7',
+              letterSpacing: focusMode ? '0.5px' : '0.3px',
+              minHeight: '100%',
+              transition: 'font-size 0.6s cubic-bezier(0.4, 0, 0.2, 1), line-height 0.6s cubic-bezier(0.4, 0, 0.2, 1), color 0.6s ease, letter-spacing 0.6s ease',
+            }}
+                placeholder="开始你的创作... 选中文字可使用AI润色"
+              />
+            </div>
 
             {!saved && (
               <div className="absolute bottom-4 right-4 px-3 py-1.5 rounded-full text-xs animate-pulse" style={{ background: 'rgba(124,106,240,0.15)', color: '#7c6af0', border: '1px solid rgba(124,106,240,0.2)' }}>
@@ -603,8 +629,8 @@ const Editor: React.FC = () => {
           </div>
 
           {/* Bottom Status Bar */}
-          <div className="flex items-center justify-between px-6 py-1.5 flex-shrink-0 text-xs" style={{ background: '#12121a', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between px-6 flex-shrink-0 text-xs relative" style={{ background: focusMode ? 'rgba(8,8,12,0.95)' : '#12121a', borderTop: focusMode ? '1px solid rgba(124,106,240,0.06)' : '1px solid rgba(255,255,255,0.04)', transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+            <div className="flex items-center gap-3" style={{ opacity: focusMode ? 0 : 1, maxHeight: focusMode ? 0 : 24, transition: 'opacity 0.3s ease, max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1)', overflow: 'hidden' }}>
               <span style={{ color: logicIssues > 0 ? '#f59e0b' : '#22c55e' }}>
                 {logicIssues > 0 ? `⚠️ ${logicIssues}个问题` : '✅ 逻辑自洽'}
               </span>
@@ -613,7 +639,7 @@ const Editor: React.FC = () => {
               <span style={{ color: '#52525b' }}>|</span>
               <span style={{ color: '#52525b' }}>章节: {chapters.length}</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2" style={{ opacity: focusMode ? 0 : 1, maxHeight: focusMode ? 0 : 24, transition: 'opacity 0.3s ease, max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1)', overflow: 'hidden' }}>
               <button onClick={() => setShowBranch(true)} className="hover:text-white transition-colors" style={{ color: '#52525b' }}>
                 🎭 剧情推演
               </button>
@@ -621,12 +647,20 @@ const Editor: React.FC = () => {
                 🔍 逻辑检测
               </button>
             </div>
+            <div className="absolute left-0 right-0 flex items-center justify-center" style={{ opacity: focusMode ? 1 : 0, transition: 'opacity 0.4s ease 0.2s', pointerEvents: focusMode ? 'auto' : 'none' }}>
+              <div className="flex items-center gap-3 py-2">
+                <span style={{ color: '#52525b', fontVariantNumeric: 'tabular-nums' }}>{wordCount.toLocaleString()} 字</span>
+                <span style={{ color: 'rgba(124,106,240,0.3)' }}>·</span>
+                <span style={{ color: '#52525b' }}>第 {activeChapterId} 章</span>
+                <span style={{ color: 'rgba(124,106,240,0.3)' }}>·</span>
+                <span className="px-2 py-0.5 rounded" style={{ color: 'rgba(124,106,240,0.5)', background: 'rgba(124,106,240,0.08)', border: '1px solid rgba(124,106,240,0.1)' }}>Esc 退出</span>
+              </div>
+            </div>
           </div>
         </main>
 
         {/* Right Sidebar */}
-        {!focusMode && (
-          <aside className="overflow-y-auto" style={{ background: '#16161c', borderLeft: '1px solid rgba(255,255,255,0.06)', width: rightWidth }}>
+        <aside className="overflow-y-auto overflow-x-hidden" style={{ background: '#16161c', borderLeft: '1px solid rgba(255,255,255,0.06)', width: rightWidth, opacity: focusMode ? 0 : 1, transition: 'opacity 0.3s ease', pointerEvents: focusMode ? 'none' : 'auto' }}>
             {showAIPanel && (
               <div className="p-4 border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
                 <div className="flex items-center justify-between mb-3">
@@ -708,9 +742,8 @@ const Editor: React.FC = () => {
               </div>
             )}
 
-            <RightPanelComposite />
-          </aside>
-        )}
+          <RightPanelComposite />
+        </aside>
       </div>
 
       {/* Selection Toolbar - only render on client */}
@@ -778,20 +811,16 @@ const Editor: React.FC = () => {
       )}
 
       {/* Drag handles */}
-      {!focusMode && (
-        <>
-          <div
-            onMouseDown={onLeftMouseDown}
-            className="absolute top-14 bottom-0 w-1 cursor-col-resize hover:bg-purple-500/20 transition-colors"
-            style={{ left: leftWidth - 1 }}
-          />
-          <div
-            onMouseDown={onRightMouseDown}
-            className="absolute top-14 bottom-0 w-1 cursor-col-resize hover:bg-purple-500/20 transition-colors"
-            style={{ right: rightWidth - 1 }}
-          />
-        </>
-      )}
+      <div
+        onMouseDown={onLeftMouseDown}
+        className="absolute top-14 bottom-0 w-1 cursor-col-resize hover:bg-purple-500/20 transition-colors"
+        style={{ left: leftWidth - 1, opacity: focusMode ? 0 : 1, pointerEvents: focusMode ? 'none' : 'auto', transition: 'opacity 0.3s ease' }}
+      />
+      <div
+        onMouseDown={onRightMouseDown}
+        className="absolute top-14 bottom-0 w-1 cursor-col-resize hover:bg-purple-500/20 transition-colors"
+        style={{ right: rightWidth - 1, opacity: focusMode ? 0 : 1, pointerEvents: focusMode ? 'none' : 'auto', transition: 'opacity 0.3s ease' }}
+      />
     </div>
   );
 };

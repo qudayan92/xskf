@@ -58,7 +58,7 @@ const Works: React.FC = () => {
     try {
       const res = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/novels/${novel.id}`);
       if (res.data.success) {
-        setNovels(novels.filter(n => n.id !== novel.id));
+        setNovels(prev => prev.filter(n => n.id !== novel.id));
       } else {
         alert('删除失败: ' + (res.data.error || '未知错误'));
       }
@@ -90,7 +90,7 @@ const Works: React.FC = () => {
         status: editForm.status
       });
       if (res.data.success) {
-        setNovels(novels.map(n => n.id === editingNovel.id ? { ...n, ...editForm } : n));
+        setNovels(prev => prev.map(n => n.id === editingNovel.id ? { ...n, ...editForm } : n));
         setEditingNovel(null);
       } else {
         alert('保存失败: ' + (res.data.error || '未知错误'));
@@ -107,7 +107,7 @@ const Works: React.FC = () => {
     const summary = prompt('统一创建入口：项目简介', '') || '';
     const title = prompt('统一创建入口：小说标题', pname) || pname;
     const authorInput = prompt('统一创建入口：作者ID (留空使用默认管理员)', '1');
-    const author_id = authorInput ? Number(authorInput) : 1;
+    const author_id = authorInput && !isNaN(Number(authorInput)) ? Number(authorInput) : 1;
 
     try {
       const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/create-composite`, {

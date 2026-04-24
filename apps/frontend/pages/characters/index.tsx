@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/router';
 
 interface Character {
   id: number;
@@ -35,7 +34,6 @@ const roles = ['主角', '女主', '反派', '配角', '导师', '伙伴'];
 const genders = ['男', '女', '未知'];
 
 export default function CharactersPage() {
-  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [characters, setCharacters] = useState<Character[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,7 +63,7 @@ export default function CharactersPage() {
     if (!confirm('确定要删除这个角色吗？')) return;
     try {
       await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/characters/${id}`, { method: 'DELETE' });
-      setCharacters(characters.filter(c => c.id !== id));
+      setCharacters(prev => prev.filter(c => c.id !== id));
     } catch (err) {
       console.error(err);
     }
@@ -89,7 +87,7 @@ export default function CharactersPage() {
       });
       const data = await res.json();
       if (data.success) {
-        setCharacters(characters.map(c => c.id === editingChar.id ? { ...c, ...editForm } : c));
+        setCharacters(prev => prev.map(c => c.id === editingChar.id ? { ...c, ...editForm } : c));
         setEditingChar(null);
       } else {
         alert('保存失败: ' + (data.error || '未知错误'));
@@ -154,8 +152,8 @@ export default function CharactersPage() {
             <h1 style={{ fontSize: 24, fontWeight: 600, marginBottom: 4, color: 'white' }}>角色建模</h1>
             <p style={{ fontSize: 14, color: '#71717a' }}>构建立体人物档案</p>
           </div>
-          <Link href="/characters/new" legacyBehavior>
-            <span style={{ padding: '10px 20px', borderRadius: 8, background: '#7c6af0', color: 'white', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>+ 创建角色</span>
+          <Link href="/characters/new">
+            <a style={{ padding: '10px 20px', borderRadius: 8, background: '#7c6af0', color: 'white', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>+ 创建角色</a>
           </Link>
         </div>
 
@@ -178,7 +176,7 @@ export default function CharactersPage() {
               <div key={c.id} style={{ padding: 24, borderRadius: 12, background: '#16161c', border: '1px solid rgba(255,255,255,0.04)' }}>
                 <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
                   <div style={{ width: 56, height: 56, borderRadius: '50%', background: c.avatar ? `url(${c.avatar}) center/cover` : 'linear-gradient(135deg, #7c6af0, #6b5ce7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, color: 'white' }}>
-                    {!c.avatar && c.name[0]}
+                    {!c.avatar && (c.name?.[0] || '?')}
                   </div>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>

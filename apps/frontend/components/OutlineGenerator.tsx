@@ -1,5 +1,4 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import Link from 'next/link';
 import { callAI } from '../lib/ai';
 import ChapterTitleGenerator from './ChapterTitleGenerator';
 

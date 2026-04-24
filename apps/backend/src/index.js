@@ -87,80 +87,8 @@ app.use('/api/v1/generate/chapter-titles', chapterTitlesRouter);
 
 
 // ===== In-memory storage (legacy/Agent/Collab/AI) =====
-const projects = [];
-const chapters = [];
-const characters = [];
-const worlds = [];
 const agents = [];
 let collabLogs = [];
-
-// Projects API (legacy)
-app.get('/api/v1/projects', (req, res) => {
-  res.json({ success: true, data: projects });
-});
-
-app.post('/api/v1/projects', (req, res) => {
-  const { name, genre, stylePref, targetWordCount } = req.body;
-  const project = { id: uuidv4(), name, genre, stylePref, targetWordCount, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
-  projects.push(project);
-  res.status(201).json({ success: true, data: project });
-});
-
-app.get('/api/v1/projects/:id', (req, res) => {
-  const project = projects.find(p => p.id === req.params.id);
-  if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
-  res.json({ success: true, data: project });
-});
-
-app.patch('/api/v1/projects/:id', (req, res) => {
-  const project = projects.find(p => p.id === req.params.id);
-  if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
-  Object.assign(project, req.body, { updatedAt: new Date().toISOString() });
-  res.json({ success: true, data: project });
-});
-
-app.delete('/api/v1/projects/:id', (req, res) => {
-  const index = projects.findIndex(p => p.id === req.params.id);
-  if (index === -1) return res.status(404).json({ success: false, error: 'Project not found' });
-  projects.splice(index, 1);
-  res.json({ success: true, message: 'Project deleted' });
-});
-
-// Legacy Chapters API
-app.get('/api/v1/projects/:projectId/chapters', (req, res) => {
-  res.json({ success: true, data: chapters.filter(c => c.projectId === req.params.projectId) });
-});
-
-app.post('/api/v1/projects/:projectId/chapters', (req, res) => {
-  const { title, content } = req.body;
-  const chapter = { id: uuidv4(), projectId: req.params.projectId, title, content: content || '', wordCount: content ? content.length : 0, version: 1, status: 'draft', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
-  chapters.push(chapter);
-  res.status(201).json({ success: true, data: chapter });
-});
-
-// Characters API
-app.get('/api/v1/projects/:projectId/characters', (req, res) => {
-  res.json({ success: true, data: characters.filter(c => c.projectId === req.params.projectId) });
-});
-
-app.post('/api/v1/projects/:projectId/characters', (req, res) => {
-  const { name, role, personality, appearance, avatar } = req.body;
-  const character = { id: uuidv4(), projectId: req.params.projectId, name, role, personality, appearance, avatar, createdAt: new Date().toISOString() };
-  characters.push(character);
-  res.status(201).json({ success: true, data: character });
-});
-
-// Worlds API
-app.get('/api/v1/projects/:projectId/worlds', (req, res) => {
-  res.json({ success: true, data: worlds.filter(w => w.projectId === req.params.projectId) });
-});
-
-app.post('/api/v1/projects/:projectId/worlds', (req, res) => {
-  const { type, name, description } = req.body;
-  const world = { id: uuidv4(), projectId: req.params.projectId, type, name, description, createdAt: new Date().toISOString() };
-  worlds.push(world);
-  res.status(201).json({ success: true, data: world });
-});
 
 // Agents API (in-memory)
 app.get('/api/v1/agents', (req, res) => res.json({ success: true, data: agents }));

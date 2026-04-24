@@ -7,7 +7,7 @@ interface Props {
   selectedText: string;
   position: { x: number; y: number };
   visible: boolean;
-  onAction: (action: string, style?: string) => void;
+  onAction: (result: string) => void;
   onClose: () => void;
 }
 

@@ -28,26 +28,28 @@ const NovelDetail: React.FC = () => {
         if (chaptersData.success) {
           setChapters(chaptersData.data);
         }
-      } else {
-        // API returned null or failed - use mock data
-        console.log('Using mock novel data');
-        setNovel({
-          id: 1,
-          book_id: novelId,
-          title: '星际流光',
-          subtitle: '银河系边缘的星际探索',
-          category_id: 3,
-          tags: '科幻,星际,冒险',
-          status: 1,
-          word_count: 328000,
-          chapter_count: 128,
-          summary: '这是一个科幻故事的简介...',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
-      }
-    } catch (err) {
-      console.error('Failed to fetch novel:', err);
+} else {
+      // API returned null or failed - use mock data
+      console.log('Using mock novel data');
+      setNovel({
+        id: 1,
+        book_id: novelId,
+        title: '星际流光',
+        subtitle: '银河系边缘的星际探索',
+        category_id: 3,
+        tags: '科幻,星际,冒险',
+        status: 1,
+        word_count: 328000,
+        chapter_count: 128,
+        summary: '这是一个科幻故事的简介...',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+      setChapters([]);
+    }
+  } catch (err) {
+    console.error('Failed to fetch novel:', err);
+    setChapters([]);
     } finally {
       setLoading(false);
     }
@@ -57,14 +59,6 @@ const NovelDetail: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#0a0a0f' }}>
         <div style={{ color: '#71717a' }}>加载中...</div>
-      </div>
-    );
-  }
-
-  if (!novel) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#0a0a0f' }}>
-        <div style={{ color: '#71717a' }}>作品不存在</div>
       </div>
     );
   }
@@ -207,7 +201,7 @@ const NovelDetail: React.FC = () => {
                       </span>
                       <h3 className="text-lg font-medium">{chapter.chapter_title}</h3>
                     </div>
-                    <span className="text-sm" style={{ color: '#52525b' }}>{chapter.word_count.toLocaleString()} 字</span>
+                    <span className="text-sm" style={{ color: '#52525b' }}>{(chapter.word_count || 0).toLocaleString()} 字</span>
                   </div>
                   <div className="flex items-center gap-4 text-xs" style={{ color: '#52525b' }}>
                     <span>{chapter.created_at ? new Date(chapter.created_at).toLocaleDateString('zh-CN') : '-'}</span>

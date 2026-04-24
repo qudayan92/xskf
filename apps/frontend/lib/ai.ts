@@ -12,14 +12,18 @@ export async function callAI(endpoint: string, data: Record<string, any>): Promi
     model: config.model,
   };
 
-  try {
-    const res = await fetch(`${API_BASE}${endpoint}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(requestData),
-    });
-    return await res.json();
-  } catch (error) {
+try {
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestData),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`API error ${res.status}: ${text}`);
+      }
+      return await res.json();
+    } catch (error) {
     console.error('AI API call failed:', error);
     throw error;
   }

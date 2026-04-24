@@ -443,7 +443,7 @@ const Editor: React.FC = () => {
       </header>
 
       {/* Main Layout */}
-      <div className="flex-1 min-h-0" style={{ display: 'grid', gridTemplateColumns: focusMode ? '0px 1fr 0px' : `${leftWidth}px 1fr ${rightWidth}px`, transition: 'grid-template-columns 0.3s ease' }}>
+      <div className="flex-1 min-h-0" style={{ position: 'relative', display: 'grid', gridTemplateColumns: focusMode ? '0px 1fr 0px' : `${leftWidth}px 1fr ${rightWidth}px`, transition: 'grid-template-columns 0.3s ease' }}>
         {/* Left Sidebar */}
         {!focusMode && (
           <aside className="overflow-y-auto" style={{ background: '#16161c', borderRight: '1px solid rgba(255,255,255,0.06)', width: leftWidth }}>
@@ -763,16 +763,6 @@ const Editor: React.FC = () => {
           onSave={(data) => {
             console.log('保存大纲:', data);
             setSavedOutline(data.outline);
-            // Also apply chapters to editor if any
-            if (data.chapters && data.chapters.length > 0) {
-              const formattedChapters: Chapter[] = data.chapters.map((ch: any, idx: number) => ({
-                id: Math.max(...chapters.map(c => c.id), 0) + idx + 1,
-                title: `第${ch.chapter}章：${ch.title}`,
-                content: '',
-                active: false
-              }));
-              setChapters(prev => [...prev, ...formattedChapters]);
-            }
             setShowOutline(false);
           }}
         />

@@ -40,7 +40,6 @@ router.post('/ai/book-names', async (req, res) => {
 
 类型：${genre || '科幻'}
 核心词：${keyword || '星际'}
-核心词：${keyword || '星辰'}
 
 请生成10个符合网文流行趋势的书名，每个书名要有创意、吸引眼球。
 书名长度控制在4-12个字之间。

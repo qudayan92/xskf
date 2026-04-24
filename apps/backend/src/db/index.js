@@ -73,26 +73,10 @@ async function initDb() {
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (author_id) REFERENCES users(id)
     )
-  `);
-  
-  db.run(`
-    CREATE TABLE IF NOT EXISTS chapters (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      book_id INTEGER NOT NULL,
-      chapter_no INTEGER NOT NULL,
-      chapter_title VARCHAR(100) NOT NULL,
-      content TEXT,
-      word_count INTEGER DEFAULT 0,
-      status INTEGER DEFAULT 0,
-      publish_time DATETIME DEFAULT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (book_id) REFERENCES novels(id) ON DELETE CASCADE
-    )
-  `);
+`);
 
-  db.run(`
-    CREATE TABLE IF NOT EXISTS characters (
+db.run(`
+CREATE TABLE IF NOT EXISTS characters (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       project_id INTEGER,
       name VARCHAR(100) NOT NULL,

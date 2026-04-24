@@ -59,7 +59,8 @@ router.patch('/:id', async (req, res) => {
 // DELETE /api/v1/novels/:id
 router.delete('/:id', async (req, res) => {
   try {
-    await Novel.delete(req.params.id);
+    const deleted = await Novel.delete(req.params.id);
+    if (!deleted) return res.status(404).json({ success: false, error: '作品不存在' });
     res.json({ success: true, message: '作品已删除' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

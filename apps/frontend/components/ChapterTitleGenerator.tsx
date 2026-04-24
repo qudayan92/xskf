@@ -131,14 +131,17 @@ export default function ChapterTitleGenerator({ visible, onClose, onApply }: Cha
 
   // 删除章节
   const handleDeleteChapter = (index: number) => {
-    setChapters(chapters.filter((_, i) => i !== index));
+    const newChapters = chapters.filter((_, i) => i !== index);
+    newChapters.forEach((ch, i) => { ch.chapter = i + 1; });
+    setChapters(newChapters);
   };
 
   // 添加新章节
   const handleAddChapter = () => {
+    const maxChapter = chapters.length > 0 ? Math.max(...chapters.map(c => c.chapter)) : 0;
     const newChapter: Chapter = {
-      chapter: chapters.length + 1,
-      title: `第${chapters.length + 1}章：新章节`,
+      chapter: maxChapter + 1,
+      title: `新章节`,
       type: '日常',
       emotion: 5,
       hook: null,
@@ -148,7 +151,7 @@ export default function ChapterTitleGenerator({ visible, onClose, onApply }: Cha
   };
 
   // 导出为 Markdown
-  const handleExportMarkdown = () => {
+  const handleExportMarkdown = async () => {
     if (chapters.length === 0) return;
 
     let md = `# ${bookTitle}\n\n`;
@@ -164,13 +167,11 @@ export default function ChapterTitleGenerator({ visible, onClose, onApply }: Cha
     });
 
     // 复制到剪贴板
-    navigator.clipboard.writeText(md).then(() => {
-      alert('已复制到剪贴板');
-    });
+    try { await navigator.clipboard.writeText(md); alert('已复制到剪贴板'); } catch { alert('复制失败，请手动复制'); }
   };
 
   // 导出为 JSON
-  const handleExportJson = () => {
+  const handleExportJson = async () => {
     if (chapters.length === 0) return;
 
     const json = JSON.stringify({
@@ -180,13 +181,11 @@ export default function ChapterTitleGenerator({ visible, onClose, onApply }: Cha
       emotionCurve
     }, null, 2);
 
-    navigator.clipboard.writeText(json).then(() => {
-      alert('JSON已复制到剪贴板');
-    });
+    try { await navigator.clipboard.writeText(json); alert('JSON已复制到剪贴板'); } catch { alert('复制失败'); }
   };
 
   // 导出为 TXT
-  const handleExportTxt = () => {
+  const handleExportTxt = async () => {
     if (chapters.length === 0) return;
 
     let txt = `${bookTitle}\n`;
@@ -198,9 +197,7 @@ export default function ChapterTitleGenerator({ visible, onClose, onApply }: Cha
       txt += `\n`;
     });
 
-    navigator.clipboard.writeText(txt).then(() => {
-      alert('TXT已复制到剪贴板');
-    });
+    try { await navigator.clipboard.writeText(txt); alert('TXT已复制到剪贴板'); } catch { alert('复制失败'); }
   };
 
   // 应用到编辑器

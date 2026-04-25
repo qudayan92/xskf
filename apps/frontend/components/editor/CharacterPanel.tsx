@@ -92,7 +92,7 @@ const CharacterPanel: React.FC<Props> = ({ visible, onClose, onSelect }) => {
           ) : list.length === 0 ? (
             <div style={{ textAlign: 'center', padding: 32, color: '#71717a' }}>
               <div style={{ fontSize: 32, marginBottom: 8 }}>👤</div>
-              <p>暂无角色，<a href="/characters/new" style={{ color: '#7c6af0' }}>创建角色</a></p>
+              <p style={{ cursor: 'pointer', color: '#7c6af0' }} onClick={() => window.location.href = '/characters/new'}>暂无角色，点击创建</p>
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>

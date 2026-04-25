@@ -88,38 +88,47 @@ const CreateWizard: React.FC = () => {
         <div className="max-w-4xl mx-auto px-6">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
-              <button
-                onClick={() => step > 1 ? setStep(step - 1) : router.push('/works')}
-                className="text-gray-400 hover:text-white transition-colors flex items-center gap-1 text-sm"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-                {step > 1 ? '上一步' : '返回'}
-              </button>
-              <span className="text-gray-500 text-sm">|</span>
-              <span className="text-sm font-medium" style={{ color: '#7c6af0' }}>
-                📖 新建作品
-              </span>
+<button
+                  onClick={() => step > 1 ? setStep(step - 1) : router.push('/works')}
+                  className="text-gray-400 hover:text-white transition-colors flex items-center gap-1 text-sm"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  {step > 1 ? '上一步' : '返回'}
+                </button>
+                <span className="text-gray-500 text-sm">|</span>
+                <span className="text-sm font-medium" style={{ color: '#7c6af0' }}>
+                  📖 新建作品
+                </span>
+                <span className="text-xs px-2 py-0.5 rounded ml-2" style={{ background: 'rgba(124,106,240,0.15)', color: '#a78bfa' }}>
+                  {step === 1 ? '构思' : step === 2 ? '大纲' : step === 3 ? '角色' : step === 4 ? '世界观' : '创作'}
+                </span>
             </div>
 
             {/* Progress Steps */}
             <div className="flex items-center gap-2">
-              {[1, 2, 3].map(s => (
-                <React.Fragment key={s}>
+              {[
+                { n: 1, label: '构思' },
+                { n: 2, label: '大纲' },
+                { n: 3, label: '角色' },
+                { n: 4, label: '世界观' },
+                { n: 5, label: '创作' },
+              ].map(s => (
+                <React.Fragment key={s.n}>
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-all ${
-                    s === step ? 'text-white' : s < step ? 'text-white' : 'text-gray-500'
+                    s.n === step ? 'text-white' : s.n < step ? 'text-white' : s.n === step + 1 ? 'text-gray-300' : 'text-gray-500'
                   }`} style={{
-                    background: s === step ? '#7c6af0' : s < step ? '#22c55e' : 'rgba(255,255,255,0.08)',
+                    background: s.n === step ? '#7c6af0' : s.n < step ? '#22c55e' : s.n === step + 1 ? '#374151' : 'rgba(255,255,255,0.08)',
                   }}>
-                    {s < step ? '✓' : s}
+                    {s.n < step ? '✓' : s.n}
                   </div>
-                  {s < 3 && <div className={`w-10 h-0.5 ${s < step ? 'bg-green-500' : 'bg-gray-700'}`} />}
+                  {s.n < 5 && <div className={`w-8 h-0.5 ${s.n < step ? 'bg-green-500' : s.n < step + 1 ? 'bg-gray-600' : 'bg-gray-700'}`} />}
                 </React.Fragment>
               ))}
             </div>
 
-            <span className="text-xs text-gray-500">步骤 {step}/3</span>
+            <span className="text-xs text-gray-500">步骤 {step}/5</span>
           </div>
         </div>
       </header>
@@ -130,9 +139,12 @@ const CreateWizard: React.FC = () => {
           <StepGenre data={data} updateData={updateData} onNext={() => setStep(2)} />
         )}
         {step === 2 && (
-          <StepHook data={data} updateData={updateData} onNext={() => setStep(3)} />
+          <StepHook data={{ hook: data.hook, summary: data.summary, genre: data.genre, title: data.selectedTitle || data.keyword + '传说' }} updateData={updateData} onNext={() => setStep(3)} />
         )}
-        {step === 3 && (
+        {(step === 3 || step === 4) && (
+          <StepPreview data={data} onCreate={handleCreate} loading={loading} />
+        )}
+        {step === 5 && (
           <StepPreview data={data} onCreate={handleCreate} loading={loading} />
         )}
       </main>

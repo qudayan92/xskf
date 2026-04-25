@@ -38,6 +38,8 @@ export default function CharactersPage() {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
+  const [search, setSearch] = useState('');
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [editingChar, setEditingChar] = useState<Character | null>(null);
   const [editForm, setEditForm] = useState<any>({});
   const [saving, setSaving] = useState(false);
@@ -59,47 +61,47 @@ export default function CharactersPage() {
     }
   }
 
-  async function deleteChar(id: number) {
+async function deleteChar(id: number) {
     if (!confirm('确定要删除这个角色吗？')) return;
     try {
       await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/characters/${id}`, { method: 'DELETE' });
       setCharacters(prev => prev.filter(c => c.id !== id));
+      setSelectedIds(prev => prev.filter(i => i !== id));
     } catch (err) {
       console.error(err);
     }
   }
 
-  function handleEdit(char: Character, e: React.MouseEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    setEditingChar(char);
-    setEditForm({ ...char });
+  function toggleSelect(id: number) {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
   }
 
-  async function handleSaveEdit() {
-    if (!editingChar) return;
-    setSaving(true);
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/characters/${editingChar.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editForm),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setCharacters(prev => prev.map(c => c.id === editingChar.id ? { ...c, ...editForm } : c));
-        setEditingChar(null);
-      } else {
-        alert('保存失败: ' + (data.error || '未知错误'));
-      }
-    } catch (err) {
-      alert('保存失败');
-    } finally {
-      setSaving(false);
+  function toggleSelectAll() {
+    if (selectedIds.length === list.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(list.map(c => c.id));
     }
   }
 
-  const list = filter ? characters.filter(c => c.role === filter) : characters;
+  async function batchDelete() {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`确定删除选中的 ${selectedIds.length} 个角色吗？此操作不可恢复。`)) return;
+    try {
+      const deletePromises = selectedIds.map(id => 
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/characters/${id}`, { method: 'DELETE' })
+      );
+      await Promise.all(deletePromises);
+      setCharacters(prev => prev.filter(c => !selectedIds.includes(c.id)));
+      setSelectedIds([]);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  const list = characters
+    .filter(c => filter ? c.role === filter : true)
+    .filter(c => search ? c.name.toLowerCase().includes(search.toLowerCase()) || (c.tags && c.tags.toLowerCase().includes(search.toLowerCase())) : true);
 
   if (!mounted) return null;
 
@@ -152,9 +154,28 @@ export default function CharactersPage() {
             <h1 style={{ fontSize: 24, fontWeight: 600, marginBottom: 4, color: 'white' }}>角色建模</h1>
             <p style={{ fontSize: 14, color: '#71717a' }}>构建立体人物档案</p>
           </div>
-          <Link href="/characters/new">
-            <a style={{ padding: '10px 20px', borderRadius: 8, background: '#7c6af0', color: 'white', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>+ 创建角色</a>
-          </Link>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <div style={{ position: 'relative' }}>
+              <input 
+                type="text" 
+                value={search} 
+                onChange={e => setSearch(e.target.value)} 
+                placeholder="搜索角色..." 
+                style={{ width: 160, padding: '10px 12px 10px 36px', borderRadius: 8, fontSize: 14, background: '#1c1c24', border: '1px solid rgba(255,255,255,0.1)', color: 'white', outline: 'none' }} 
+              />
+              <svg style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 16, height: 16, color: '#71717a' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+              </svg>
+            </div>
+            {selectedIds.length > 0 && (
+              <button onClick={batchDelete} style={{ padding: '10px 16px', borderRadius: 8, fontSize: 14, background: 'rgba(239,68,68,0.15)', color: '#ef4444', cursor: 'pointer', border: 'none' }}>
+                删除选中 ({selectedIds.length})
+              </button>
+            )}
+            <Link href="/characters/new">
+              <a style={{ padding: '10px 20px', borderRadius: 8, background: '#7c6af0', color: 'white', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>+ 创建角色</a>
+            </Link>
+          </div>
         </div>
 
         {/* Filter Tabs */}
@@ -175,6 +196,12 @@ export default function CharactersPage() {
             {list.map(c => (
               <div key={c.id} style={{ padding: 24, borderRadius: 12, background: '#16161c', border: '1px solid rgba(255,255,255,0.04)' }}>
                 <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
+                  <input 
+                    type="checkbox" 
+                    checked={selectedIds.includes(c.id)}
+                    onChange={() => toggleSelect(c.id)}
+                    style={{ width: 20, height: 20, accentColor: '#7c6af0', cursor: 'pointer' }}
+                  />
                   <div style={{ width: 56, height: 56, borderRadius: '50%', background: c.avatar ? `url(${c.avatar}) center/cover` : 'linear-gradient(135deg, #7c6af0, #6b5ce7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, color: 'white' }}>
                     {!c.avatar && (c.name?.[0] || '?')}
                   </div>

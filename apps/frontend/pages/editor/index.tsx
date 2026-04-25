@@ -8,6 +8,7 @@ import SelectionToolbar from '../../components/editor/SelectionToolbar';
 import BranchPanel from '../../components/editor/BranchPanel';
 import LogicChecker from '../../components/editor/LogicChecker';
 import OutlineGenerator from '../../components/OutlineGenerator';
+import CharacterPanel from '../../components/editor/CharacterPanel';
 import AIConfigModal, { getAIConfig, isMockMode } from '../../components/AIConfigModal';
 import { useStore } from '../../store';
 
@@ -86,6 +87,9 @@ const Editor: React.FC = () => {
   // Outline Generator
   const [showOutline, setShowOutline] = useState(false);
   const [savedOutline, setSavedOutline] = useState<any>(null);
+
+  // Character Panel
+  const [showCharacters, setShowCharacters] = useState(false);
 
   // AI Assistant result
   const [aiLoading, setAiLoading] = useState<string | null>(null);
@@ -582,6 +586,14 @@ const Editor: React.FC = () => {
               >
                 📋 大纲
               </button>
+              <button
+                onClick={() => setShowCharacters(true)}
+                className="px-3 py-1 rounded-lg text-xs font-medium transition-all hover:opacity-80"
+                style={{ background: 'rgba(59,130,246,0.12)', color: '#3b82f6', border: '1px solid rgba(59,130,246,0.2)' }}
+                title="角色库"
+              >
+                👤 角色
+              </button>
 
               <div className="flex-1" />
               <span className="text-xs" style={{ color: '#7c6af0' }}>第 {activeChapterId} 章</span>
@@ -800,6 +812,16 @@ const Editor: React.FC = () => {
           }}
         />
       )}
+
+      {/* Character Panel */}
+      <CharacterPanel
+        visible={showCharacters}
+        onClose={() => setShowCharacters(false)}
+        onSelect={(char) => {
+          insertFormat(`【${char.name}】`, '');
+          setShowCharacters(false);
+        }}
+      />
 
       {/* AI Config Modal - only render on client */}
       {clientOnly && (

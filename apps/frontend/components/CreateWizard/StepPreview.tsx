@@ -8,6 +8,16 @@ interface Props {
     subGenre: string;
     hook: string;
     summary: string;
+    targetWords?: number;
+    // Outline
+    outline: string;
+    outlineStructure: string;
+    // Characters
+    characters: { name: string; role: string; desc: string }[];
+    // World
+    worldName: string;
+    worldBackground: string;
+    worldRules: string;
   };
   onCreate: () => void;
   loading: boolean;
@@ -17,6 +27,22 @@ const genreColors: Record<string, string> = {
   '玄幻': '#f59e0b', '科幻': '#3b82f6', '都市': '#10b981',
   '历史': '#ef4444', '悬疑': '#8b5cf6', '言情': '#ec4899',
   '奇幻': '#06b6d4', '军事': '#6b7280', '游戏': '#22c55e',
+};
+
+const structureLabels: Record<string, string> = {
+  'single': '单幕式', 'dual': '双幕式', 'three': '三幕式', 'five': '五幕式',
+};
+
+const backgroundLabels: Record<string, string> = {
+  'ancient': '古代', 'modern': '现代', 'future': '未来', 'fantasy': '架空',
+};
+
+const ruleLabels: Record<string, string> = {
+  'cultivation': '修炼体系', 'magic': '魔法系统', 'tech': '科技水平', 'skill': '技能系统',
+};
+
+const roleLabels: Record<string, string> = {
+  'protagonist': '主角', 'mentor': '导师', 'antagonist': '反派', 'ally': '盟友', 'love': '爱人', 'sidekick': '跟班',
 };
 
 const StepPreview: React.FC<Props> = ({ data, onCreate, loading }) => {
@@ -47,9 +73,60 @@ const StepPreview: React.FC<Props> = ({ data, onCreate, loading }) => {
 
         {/* Info */}
         <div className="p-6 space-y-4">
+          {/* World Info */}
+          {data.worldName && (
+            <div className="p-3 rounded-xl" style={{ background: 'rgba(124,106,240,0.06)', border: '1px solid rgba(124,106,240,0.1)' }}>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-sm">🌍</span>
+                <span className="text-xs font-medium" style={{ color: '#a78bfa' }}>世界观</span>
+                <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'rgba(124,106,240,0.15)', color: '#a78bfa' }}>
+                  {data.worldName}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-xs" style={{ color: '#71717a' }}>
+                <span>{backgroundLabels[data.worldBackground] || '未设定'}</span>
+                {data.worldRules && (
+                  <>
+                    <span>·</span>
+                    <span>{ruleLabels[data.worldRules] || ''}</span>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Outline Info */}
+          {data.outline && (
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs text-gray-500">📋 大纲</span>
+                <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'rgba(139,92,246,0.15)', color: '#a78bfa' }}>
+                  {structureLabels[data.outlineStructure] || '双幕式'}
+                </span>
+              </div>
+              <div className="text-sm leading-relaxed" style={{ color: '#a1a1aa' }}>
+                {data.outline}
+              </div>
+            </div>
+          )}
+
+          {/* Characters */}
+          {data.characters && data.characters.length > 0 && (
+            <div>
+              <div className="text-xs text-gray-500 mb-2">👤 角色（{data.characters.length}人）</div>
+              <div className="flex flex-wrap gap-2">
+                {data.characters.map((char, i) => (
+                  <span key={i} className="px-2 py-1 rounded-lg text-xs" style={{ background: 'rgba(255,255,255,0.05)', color: '#a1a1aa' }}>
+                    {char.name} · {roleLabels[char.role] || char.role}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Hook */}
           <div>
-            <div className="text-xs text-gray-500 mb-1">核心看点</div>
+            <div className="text-xs text-gray-500 mb-1">🎯 核心看点</div>
             <div className="text-sm text-gray-200" style={{ lineHeight: 1.6 }}>「{data.hook || '未填写'}」</div>
           </div>
 
@@ -65,7 +142,7 @@ const StepPreview: React.FC<Props> = ({ data, onCreate, loading }) => {
             </div>
             <div className="text-sm leading-relaxed" style={{ color: '#a1a1aa' }}>
               {data.summary || (
-                <span style={{ color: '#3f3f46' }}>暂无简介，可在创建后补充</span>
+                <span style={{ color: '#3f3f46' }}>暂无简介</span>
               )}
             </div>
           </div>

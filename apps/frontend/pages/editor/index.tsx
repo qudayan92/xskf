@@ -617,7 +617,7 @@ const Editor: React.FC = () => {
 
           {/* Editor Content */}
           <div className="flex-1 overflow-y-auto relative" onClick={() => setSelectionVisible(false)} style={{ padding: focusMode ? '64px 32px' : '48px 64px', transition: 'padding 0.6s cubic-bezier(0.4, 0, 0.2, 1)' }}>
-          <div style={{ maxWidth: focusMode ? 640 : 900, margin: '0 auto', transition: 'max-width 0.6s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+          <div className="min-h-full" style={{ maxWidth: focusMode ? 640 : 900, margin: '0 auto', transition: 'max-width 0.6s cubic-bezier(0.4, 0, 0.2, 1)' }}>
               <textarea
                 ref={textareaRef}
                 value={activeChapter.content}
@@ -633,14 +633,13 @@ const Editor: React.FC = () => {
                   }
                   if (focusMode && e.key === 'Escape') { setFocusMode(false); }
                 }}
-          className="w-full resize-none outline-none bg-transparent"
+          className="w-full h-full min-h-[calc(100vh-200px)] resize-none outline-none bg-transparent"
             style={{
               fontFamily: focusMode ? "'Source Serif Pro', Georgia, serif" : "'Source Serif Pro', Georgia, serif",
               fontSize: focusMode ? 21 : 17,
               lineHeight: focusMode ? 2.4 : 1.9,
               color: focusMode ? '#c8c8cd' : '#e4e4e7',
               letterSpacing: focusMode ? '0.5px' : '0.3px',
-              minHeight: '100%',
               transition: 'font-size 0.6s cubic-bezier(0.4, 0, 0.2, 1), line-height 0.6s cubic-bezier(0.4, 0, 0.2, 1), color 0.6s ease, letter-spacing 0.6s ease',
             }}
                 placeholder="开始你的创作... 选中文字可使用AI润色"

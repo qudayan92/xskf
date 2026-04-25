@@ -89,6 +89,31 @@ const Editor: React.FC = () => {
   const [showOutline, setShowOutline] = useState(false);
   const [savedOutline, setSavedOutline] = useState<any>(null);
 
+  // Chapter expand/collapse
+  const [expandedChapters, setExpandedChapters] = useState<Set<number>>(new Set());
+
+  const toggleExpand = (id: number) => {
+    setExpandedChapters(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleDeleteChapter = (id: number, title: string) => {
+    if (confirm(`确定要删除「${title}」吗？此操作不可恢复。`)) {
+      if (chapters.length === 1) {
+        alert('至少需要保留一个章节');
+        return;
+      }
+      setChapters(prev => prev.filter(c => c.id !== id));
+      if (activeChapterId === id) {
+        setActiveChapterId(chapters.find(c => c.id !== id)?.id || 1);
+      }
+    }
+  };
+
   // Character Panel
   const [showCharacters, setShowCharacters] = useState(false);
 
@@ -485,20 +510,45 @@ const Editor: React.FC = () => {
               {chapters.map((ch) => (
                 <div
                   key={ch.id}
-                  onClick={() => switchChapter(ch.id)}
-                  className="flex items-center gap-2 p-2 rounded-lg cursor-pointer mb-1 transition-all"
-                  style={{
-                    background: ch.id === activeChapterId ? 'rgba(124,106,240,0.12)' : 'transparent',
-                    border: ch.id === activeChapterId ? '1px solid rgba(124,106,240,0.2)' : '1px solid transparent',
-                  }}
+                  className="mb-1"
                 >
-                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke={ch.id === activeChapterId ? '#7c6af0' : '#52525b'} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                  </svg>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm truncate" style={{ color: ch.id === activeChapterId ? '#e4e4e7' : '#71717a' }}>{ch.title}</div>
-                    <div className="text-xs" style={{ color: '#52525b' }}>{ch.content.replace(/\s/g, '').length.toLocaleString()} 字</div>
+                  <div
+                    className="flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all"
+                    style={{
+                      background: ch.id === activeChapterId ? 'rgba(124,106,240,0.12)' : 'transparent',
+                      border: ch.id === activeChapterId ? '1px solid rgba(124,106,240,0.2)' : '1px solid transparent',
+                    }}
+                  >
+                    <button
+                      onClick={(e) => { e.stopPropagation(); toggleExpand(ch.id); }}
+                      className="w-4 h-4 flex-shrink-0 flex items-center justify-center"
+                      style={{ color: '#52525b' }}
+                    >
+                      <svg className="w-3 h-3 transition-transform" style={{ transform: expandedChapters.has(ch.id) ? 'rotate(90deg)' : 'rotate(0deg)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/>
+                      </svg>
+                    </button>
+                    <div className="flex-1 min-w-0" onClick={() => switchChapter(ch.id)}>
+                      <div className="text-sm truncate" style={{ color: ch.id === activeChapterId ? '#e4e4e7' : '#71717a' }}>{ch.title}</div>
+                      <div className="text-xs" style={{ color: '#52525b' }}>{ch.content.replace(/\s/g, '').length.toLocaleString()} 字</div>
+                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDeleteChapter(ch.id, ch.title); }}
+                      className="p-1 rounded hover:bg-red-500/20"
+                      style={{ color: '#71717a' }}
+                      title="删除章节"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                      </svg>
+                    </button>
                   </div>
+                  {/* Expanded content preview */}
+                  {expandedChapters.has(ch.id) && ch.content && (
+                    <div className="ml-6 p-2 rounded text-xs" style={{ background: 'rgba(255,255,255,0.03)', color: '#71717a', maxHeight: 100, overflow: 'auto' }}>
+                      {ch.content.slice(0, 200)}{ch.content.length > 200 ? '...' : ''}
+                    </div>
+                  )}
                 </div>
               ))}
               <button
@@ -636,10 +686,10 @@ const Editor: React.FC = () => {
           className="w-full h-full min-h-[calc(100vh-200px)] resize-none outline-none bg-transparent"
             style={{
               fontFamily: focusMode ? "'Source Serif Pro', Georgia, serif" : "'Source Serif Pro', Georgia, serif",
-              fontSize: focusMode ? 21 : 17,
-              lineHeight: focusMode ? 2.4 : 1.9,
-              color: focusMode ? '#c8c8cd' : '#e4e4e7',
-              letterSpacing: focusMode ? '0.5px' : '0.3px',
+              fontSize: focusMode ? 21 : 18,
+              lineHeight: focusMode ? 2.5 : 2.2,
+              color: focusMode ? '#c8c8cd' : '#d4d4d8',
+              letterSpacing: focusMode ? '0.5px' : '0.35px',
               transition: 'font-size 0.6s cubic-bezier(0.4, 0, 0.2, 1), line-height 0.6s cubic-bezier(0.4, 0, 0.2, 1), color 0.6s ease, letter-spacing 0.6s ease',
             }}
                 placeholder="开始你的创作... 选中文字可使用AI润色"

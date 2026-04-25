@@ -9,6 +9,7 @@ import BranchPanel from '../../components/editor/BranchPanel';
 import LogicChecker from '../../components/editor/LogicChecker';
 import OutlineGenerator from '../../components/OutlineGenerator';
 import CharacterPanel from '../../components/editor/CharacterPanel';
+import WordCountModal from '../../components/editor/WordCountModal';
 import AIConfigModal, { getAIConfig, isMockMode } from '../../components/AIConfigModal';
 import { useStore } from '../../store';
 
@@ -90,6 +91,9 @@ const Editor: React.FC = () => {
 
   // Character Panel
   const [showCharacters, setShowCharacters] = useState(false);
+
+  // Word Count Modal
+  const [showWordCount, setShowWordCount] = useState(false);
 
   // AI Assistant result
   const [aiLoading, setAiLoading] = useState<string | null>(null);
@@ -596,6 +600,14 @@ const Editor: React.FC = () => {
               >
                 👤 角色
               </button>
+              <button
+                onClick={() => setShowWordCount(true)}
+                className="px-3 py-1 rounded-lg text-xs font-medium transition-all hover:opacity-80"
+                style={{ background: 'rgba(34,197,94,0.12)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.2)' }}
+                title="字数统计"
+              >
+                📊 统计
+              </button>
 
               <div className="flex-1" />
               <span className="text-xs" style={{ color: '#7c6af0' }}>第 {activeChapterId} 章</span>
@@ -829,6 +841,13 @@ const Editor: React.FC = () => {
           insertFormat(`【${char.name}】`, '');
           setShowCharacters(false);
         }}
+      />
+
+      {/* Word Count Modal */}
+      <WordCountModal
+        visible={showWordCount}
+        onClose={() => setShowWordCount(false)}
+        chapters={chapters}
       />
 
       {/* AI Config Modal - only render on client */}

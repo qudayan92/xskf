@@ -26,6 +26,8 @@ const Works: React.FC = () => {
   const [editingNovel, setEditingNovel] = useState<Novel | null>(null);
   const [editForm, setEditForm] = useState({ title: '', subtitle: '', status: 0 });
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
   useEffect(() => {
     fetchNovels();
@@ -125,7 +127,55 @@ const Works: React.FC = () => {
     }
   };
 
-  const filteredNovels = filter === 'all' ? novels : novels.filter(n => n.status === (filter === 'ongoing' ? 1 : 2));
+  const filteredNovels = novels
+  .filter(n => filter === 'all' ? true : n.status === (filter === 'ongoing' ? 1 : 2))
+  .filter(n => search ? n.title.toLowerCase().includes(search.toLowerCase()) || (n.tags && n.tags.toLowerCase().includes(search.toLowerCase())) : true);
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === filteredNovels.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredNovels.map(n => n.id));
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`确定删除选中的 ${selectedIds.length} 部作品吗？此操作不可恢复。`)) return;
+
+    setDeletingId('batch');
+    try {
+      const deletePromises = selectedIds.map(id => 
+        axios.delete(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/novels/${id}`)
+      );
+      await Promise.all(deletePromises);
+      setNovels(prev => prev.filter(n => !selectedIds.includes(n.id)));
+      setSelectedIds([]);
+    } catch (err) {
+      alert('批量删除失败');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleBatchUpdateStatus = async (status: number) => {
+    if (selectedIds.length === 0) return;
+
+    try {
+      const updatePromises = selectedIds.map(id => 
+        axios.patch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/novels/${id}`, { status })
+      );
+      await Promise.all(updatePromises);
+      setNovels(prev => prev.map(n => selectedIds.includes(n.id) ? { ...n, status } : n));
+      setSelectedIds([]);
+    } catch (err) {
+      alert('批量更新状态失败');
+    }
+  };
 
   const statusMap: any = {
     0: { text: '草稿', color: '#52525b' },
@@ -185,6 +235,19 @@ const Works: React.FC = () => {
             <p className="text-sm" style={{ color: '#71717a' }}>管理你的创作项目</p>
           </div>
           <div className="flex items-center gap-2">
+            <div className="relative">
+              <input
+                type="text"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="搜索作品..."
+                className="w-48 px-4 py-2 text-sm rounded-lg pl-10"
+                style={{ background: '#1f1f24', color: '#e5e7eb', border: '1px solid rgba(255,255,255,0.1)' }}
+              />
+              <svg className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style={{ color: '#71717a' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+              </svg>
+            </div>
             <button
               onClick={handleCreate}
               className="px-4 py-2 text-sm font-medium rounded-lg"
@@ -196,24 +259,55 @@ const Works: React.FC = () => {
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex gap-2 mb-8">
-          {[
-            { id: 'all', label: `全部 (${novels.length})` },
-            { id: 'ongoing', label: `连载中 (${novels.filter(n => n.status === 1).length})` },
-            { id: 'completed', label: `已完结 (${novels.filter(n => n.status === 2).length})` },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setFilter(tab.id as any)}
-              className="px-4 py-2 text-sm font-medium rounded-lg transition-all"
-              style={{
-                background: filter === tab.id ? '#7c6af0' : 'rgba(255,255,255,0.05)',
-                color: filter === tab.id ? '#fff' : '#71717a'
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex gap-2">
+            {[
+              { id: 'all', label: `全部 (${novels.length})` },
+              { id: 'ongoing', label: `连载中 (${novels.filter(n => n.status === 1).length})` },
+              { id: 'completed', label: `已完结 (${novels.filter(n => n.status === 2).length})` },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setFilter(tab.id as any)}
+                className="px-4 py-2 text-sm font-medium rounded-lg transition-all"
+                style={{
+                  background: filter === tab.id ? '#7c6af0' : 'rgba(255,255,255,0.05)',
+                  color: filter === tab.id ? '#fff' : '#71717a'
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Batch Actions */}
+          {selectedIds.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm" style={{ color: '#a78bfa' }}>已选中 {selectedIds.length} 项</span>
+              <button
+                onClick={() => handleBatchUpdateStatus(1)}
+                className="px-3 py-1.5 text-xs rounded-lg"
+                style={{ background: 'rgba(124,106,240,0.15)', color: '#a78bfa' }}
+              >
+                设为连载
+              </button>
+              <button
+                onClick={() => handleBatchUpdateStatus(2)}
+                className="px-3 py-1.5 text-xs rounded-lg"
+                style={{ background: 'rgba(34,197,94,0.15)', color: '#22c55e' }}
+              >
+                设为完结
+              </button>
+              <button
+                onClick={handleBatchDelete}
+                disabled={deletingId === 'batch'}
+                className="px-3 py-1.5 text-xs rounded-lg"
+                style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}
+              >
+                {deletingId === 'batch' ? '删除中...' : '批量删除'}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Stats */}
@@ -252,7 +346,15 @@ const Works: React.FC = () => {
                 className="p-5 rounded-xl cursor-pointer transition-all hover:border-purple-500/30"
                 style={{ background: '#16161c', border: '1px solid rgba(255,255,255,0.04)' }}
               >
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex items-start gap-3 mb-3">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(novel.id)}
+                    onChange={() => toggleSelect(novel.id)}
+                    className="w-4 h-4 mt-1 rounded"
+                    style={{ accentColor: '#7c6af0' }}
+                    onClick={e => e.stopPropagation()}
+                  />
                   <div className="flex-1 min-w-0">
                     <Link href={`/works/${novel.book_id}`} legacyBehavior>
                       <a className="block">
@@ -263,7 +365,7 @@ const Works: React.FC = () => {
                       </a>
                     </Link>
                   </div>
-                  <div className="flex items-center gap-1 ml-2">
+                  <div className="flex items-center gap-1">
                     <span
                       className="px-2 py-0.5 text-xs rounded-full"
                       style={{

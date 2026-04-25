@@ -2,6 +2,9 @@ import React, { useState, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import StepGenre from '../../components/CreateWizard/StepGenre';
 import StepHook from '../../components/CreateWizard/StepHook';
+import StepOutline from '../../components/CreateWizard/StepOutline';
+import StepCharacters from '../../components/CreateWizard/StepCharacters';
+import StepWorld from '../../components/CreateWizard/StepWorld';
 import StepPreview from '../../components/CreateWizard/StepPreview';
 
 interface WizardData {
@@ -13,6 +16,15 @@ interface WizardData {
   hook: string;
   summary: string;
   targetWords: number;
+  // Step 2: Outline
+  outline: string;
+  outlineStructure: string;
+  // Step 3: Characters
+  characters: { name: string; role: string; desc: string }[];
+  // Step 4: World
+  worldName: string;
+  worldBackground: string;
+  worldRules: string;
 }
 
 const CreateWizard: React.FC = () => {
@@ -28,6 +40,15 @@ const CreateWizard: React.FC = () => {
     hook: '',
     summary: '',
     targetWords: 100,
+    // Outline
+    outline: '',
+    outlineStructure: 'dual',
+    // Characters
+    characters: [],
+    // World
+    worldName: '',
+    worldBackground: '',
+    worldRules: '',
   });
 
   const updateData = useCallback((patch: Partial<WizardData>) => {
@@ -139,10 +160,34 @@ const CreateWizard: React.FC = () => {
           <StepGenre data={data} updateData={updateData} onNext={() => setStep(2)} />
         )}
         {step === 2 && (
-          <StepHook data={{ hook: data.hook, summary: data.summary, genre: data.genre, title: data.selectedTitle || data.keyword + '传说' }} updateData={updateData} onNext={() => setStep(3)} />
+          <StepOutline 
+            data={{ 
+              outline: data.outline, 
+              outlineStructure: data.outlineStructure,
+              genre: data.genre, 
+              title: data.selectedTitle || data.keyword + '传说' 
+            }} 
+            updateData={updateData} 
+            onNext={() => setStep(3)} 
+          />
         )}
-        {(step === 3 || step === 4) && (
-          <StepPreview data={data} onCreate={handleCreate} loading={loading} />
+        {step === 3 && (
+          <StepCharacters 
+            data={{ characters: data.characters }} 
+            updateData={updateData} 
+            onNext={() => setStep(4)} 
+          />
+        )}
+        {step === 4 && (
+          <StepWorld 
+            data={{ 
+              worldName: data.worldName, 
+              worldBackground: data.worldBackground,
+              worldRules: data.worldRules 
+            }} 
+            updateData={updateData} 
+            onNext={() => setStep(5)} 
+          />
         )}
         {step === 5 && (
           <StepPreview data={data} onCreate={handleCreate} loading={loading} />

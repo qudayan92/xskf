@@ -117,6 +117,8 @@ const Editor: React.FC = () => {
   const activeChapter = chapters.find(c => c.id === activeChapterId) || chapters[0];
   const wordCount = activeChapter.content.replace(/\s/g, '').length;
   const charCount = activeChapter.content.length;
+  const lineCount = activeChapter.content.split('\n').length;
+  const readingTime = Math.max(1, Math.ceil(wordCount / 200));
 
 // Fetch novel info and chapters when novelId changes
   useEffect(() => {
@@ -647,9 +649,13 @@ const Editor: React.FC = () => {
                 {logicIssues > 0 ? `⚠️ ${logicIssues}个问题` : '✅ 逻辑自洽'}
               </span>
               <span style={{ color: '#52525b' }}>|</span>
-              <span style={{ color: '#52525b' }}>字数: {wordCount.toLocaleString()}</span>
+              <span style={{ color: '#52525b' }}>{wordCount.toLocaleString()} 字</span>
               <span style={{ color: '#52525b' }}>|</span>
-              <span style={{ color: '#52525b' }}>章节: {chapters.length}</span>
+              <span style={{ color: '#52525b' }}>{lineCount} 行</span>
+              <span style={{ color: '#52525b' }}>|</span>
+              <span style={{ color: '#52525b' }}>约 {readingTime} 分钟</span>
+              <span style={{ color: '#52525b' }}>|</span>
+              <span style={{ color: '#52525b' }}>{chapters.length} 章</span>
             </div>
             <div className="flex items-center gap-2" style={{ opacity: focusMode ? 0 : 1, maxHeight: focusMode ? 0 : 24, transition: 'opacity 0.3s ease, max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1)', overflow: 'hidden' }}>
               <button onClick={() => setShowBranch(true)} className="hover:text-white transition-colors" style={{ color: '#52525b' }}>
@@ -662,6 +668,8 @@ const Editor: React.FC = () => {
             <div className="absolute left-0 right-0 flex items-center justify-center" style={{ opacity: focusMode ? 1 : 0, transition: 'opacity 0.4s ease 0.2s', pointerEvents: focusMode ? 'auto' : 'none' }}>
               <div className="flex items-center gap-3 py-2">
                 <span style={{ color: '#52525b', fontVariantNumeric: 'tabular-nums' }}>{wordCount.toLocaleString()} 字</span>
+                <span style={{ color: 'rgba(124,106,240,0.3)' }}>·</span>
+                <span style={{ color: '#52525b' }}>{lineCount} 行</span>
                 <span style={{ color: 'rgba(124,106,240,0.3)' }}>·</span>
                 <span style={{ color: '#52525b' }}>第 {activeChapterId} 章</span>
                 <span style={{ color: 'rgba(124,106,240,0.3)' }}>·</span>

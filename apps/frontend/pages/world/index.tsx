@@ -25,6 +25,8 @@ const icons: Record<string, string> = {
 const World: React.FC = () => {
   const [elements, setElements] = useState<WorldElement[]>([]);
   const [filter, setFilter] = useState('全部');
+  const [search, setSearch] = useState('');
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [newElement, setNewElement] = useState({ type: '星球', name: '', description: '' });
@@ -67,11 +69,43 @@ const World: React.FC = () => {
   const handleDelete = async (id: number) => {
     try {
       await axios.delete(`${API_URL}/api/v1/worlds/${id}`);
-      fetchWorlds();
+      setElements(prev => prev.filter(e => e.id !== id));
+      setSelectedIds(prev => prev.filter(i => i !== id));
     } catch (err) {
       console.error('Error deleting world:', err);
     }
   };
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === list.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(list.map(e => e.id));
+    }
+  };
+
+  const batchDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`确定删除选中的 ${selectedIds.length} 项设定吗？`)) return;
+    try {
+      const deletePromises = selectedIds.map(id => 
+        axios.delete(`${API_URL}/api/v1/worlds/${id}`)
+      );
+      await Promise.all(deletePromises);
+      setElements(prev => prev.filter(e => !selectedIds.includes(e.id)));
+      setSelectedIds([]);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const list = elements
+    .filter(e => filter === '全部' ? true : e.type === filter)
+    .filter(e => search ? e.name.toLowerCase().includes(search.toLowerCase()) || e.description.toLowerCase().includes(search.toLowerCase()) : true);
 
   const handleAiGenerate = async () => {
     if (!aiPrompt) return;
@@ -148,13 +182,32 @@ const World: React.FC = () => {
             <h1 className="text-2xl font-semibold mb-1">世界观</h1>
             <p className="text-sm" style={{ color: '#71717a' }}>构建你的故事世界</p>
           </div>
-          <button 
-            onClick={() => setShowModal(true)}
-            className="px-5 py-2.5 text-sm font-medium rounded-lg" 
-            style={{ background: '#7c6af0', color: '#fff' }}
-          >
-            + 添加设定
-          </button>
+          <div className="flex items-center gap-3">
+            <input 
+              type="text" 
+              value={search} 
+              onChange={e => setSearch(e.target.value)}
+              placeholder="搜索..."
+              className="px-4 py-2.5 text-sm rounded-lg"
+              style={{ background: '#1c1c24', color: '#e4e4e7', border: '1px solid rgba(255,255,255,0.1)' }}
+            />
+            {selectedIds.length > 0 && (
+              <button 
+                onClick={batchDelete}
+                className="px-4 py-2.5 text-sm rounded-lg"
+                style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}
+              >
+                删除选中 ({selectedIds.length})
+              </button>
+            )}
+            <button 
+              onClick={() => setShowModal(true)}
+              className="px-5 py-2.5 text-sm font-medium rounded-lg" 
+              style={{ background: '#7c6af0', color: '#fff' }}
+            >
+              + 添加设定
+            </button>
+          </div>
         </div>
 
         <div className="mb-8 p-8 rounded-xl text-center" style={{ background: '#16161c', border: '1px solid rgba(255,255,255,0.04)' }}>
@@ -184,6 +237,12 @@ const World: React.FC = () => {
             {elements.map((el) => (
               <div key={el.id} className="p-5 rounded-xl transition-all hover-lift" style={{ background: '#16161c', border: '1px solid rgba(255,255,255,0.04)' }}>
                 <div className="flex items-start gap-3 mb-3">
+                  <input 
+                    type="checkbox" 
+                    checked={selectedIds.includes(el.id)}
+                    onChange={() => toggleSelect(el.id)}
+                    style={{ width: 18, height: 18, accentColor: '#7c6af0', marginTop: 2 }}
+                  />
                   <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xl" style={{ background: 'rgba(124,106,240,0.15)' }}>
                     {el.icon || '📌'}
                   </div>

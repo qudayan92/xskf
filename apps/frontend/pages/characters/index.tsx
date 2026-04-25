@@ -172,7 +172,7 @@ async function deleteChar(id: number) {
                 删除选中 ({selectedIds.length})
               </button>
             )}
-            <Link href="/characters/new">
+            <Link href="/characters/new" legacyBehavior>
               <a style={{ padding: '10px 20px', borderRadius: 8, background: '#7c6af0', color: 'white', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>+ 创建角色</a>
             </Link>
           </div>

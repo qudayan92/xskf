@@ -89,17 +89,52 @@ const Editor: React.FC = () => {
   const [showOutline, setShowOutline] = useState(false);
   const [savedOutline, setSavedOutline] = useState<any>(null);
 
+  // World data for AI context
+  const [worldElements, setWorldElements] = useState<any[]>([]);
+  const [characters, setCharacters] = useState<any[]>([]);
+
   // Chapter expand/collapse
   const [expandedChapters, setExpandedChapters] = useState<Set<number>>(new Set());
 
-  const toggleExpand = (id: number) => {
-    setExpandedChapters(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  const fetchWorldData = async (pid: string) => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/worlds?project_id=${pid}`);
+      const data = await res.json();
+      if (data.success) {
+        setWorldElements(data.data || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch world data:', err);
+    }
   };
+
+  const fetchCharacterData = async (pid: string) => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/characters?project_id=${pid}`);
+      const data = await res.json();
+      if (data.success) {
+        setCharacters(data.data || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch character data:', err);
+    }
+  };
+
+  const getWorldContext = () => {
+    if (worldElements.length === 0) return '';
+    return `\n\n【世界观设定】\n${worldElements.map(w => `${w.icon} ${w.name}: ${w.description}`).join('\n')}`;
+  };
+
+  const getCharacterContext = () => {
+    if (characters.length === 0) return '';
+    const charList = characters.map(c => {
+      const traits = c.traits || [];
+      return `【${c.name}】${c.role || '角色'}: ${c.description || ''}\n性格: ${traits.join(', ')}`;
+    }).join('\n');
+    return `\n\n【角色设定】\n${charList}`;
+  };
+
+  const getContext = () => getWorldContext() + getCharacterContext();
 
   const handleDeleteChapter = (id: number, title: string) => {
     if (confirm(`确定要删除「${title}」吗？此操作不可恢复。`)) {
@@ -154,6 +189,8 @@ const Editor: React.FC = () => {
     if (novelId && typeof novelId === 'string') {
       fetchNovelInfo(novelId);
       fetchNovelChapters(novelId);
+      fetchWorldData(novelId);
+      fetchCharacterData(novelId);
     } else {
       // No novelId, just set clientOnly to true and load defaults
       setClientOnly(true);
@@ -361,20 +398,24 @@ const Editor: React.FC = () => {
     setAiLoading(action);
     setAiResult(null);
     setAiResultAction(action);
+    const aiContext = getContext();
     try {
       const config = getAIConfig();
       let endpoint = '/api/v1/ai/polish';
-      let payload: Record<string, any> = { text, action, style: '', provider: config.provider, apiKey: config.apiKey, model: config.model };
+      let payload: Record<string, any> = { text, action, style: '', provider: config.provider, apiKey: config.apiKey, model: config.model, worldContext: aiContext };
 
       if (action === 'continue') {
         endpoint = '/api/v1/ai/continue';
-        payload = { text, provider: config.provider, apiKey: config.apiKey, model: config.model };
+        payload = { text, provider: config.provider, apiKey: config.apiKey, model: config.model, worldContext: aiContext };
       } else if (action === 'summary') {
         endpoint = '/api/v1/ai/summary';
-        payload = { text, provider: config.provider, apiKey: config.apiKey, model: config.model };
+        payload = { text, provider: config.provider, apiKey: config.apiKey, model: config.model, worldContext: aiContext };
       } else if (action === 'dehumanize') {
         endpoint = '/api/v1/ai/dehumanize';
-        payload = { text, level: 'normal', provider: config.provider, apiKey: config.apiKey, model: config.model };
+        payload = { text, level: 'normal', provider: config.provider, apiKey: config.apiKey, model: config.model, worldContext: aiContext };
+      } else if (action === 'dialogue_style') {
+        endpoint = '/api/v1/ai/dialogue-style';
+        payload = { text, provider: config.provider, apiKey: config.apiKey, model: config.model, worldContext: aiContext };
       }
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}${endpoint}`, {
@@ -505,50 +546,28 @@ const Editor: React.FC = () => {
       <div className="flex-1 min-h-0" style={{ position: 'relative', display: 'grid', gridTemplateColumns: focusMode ? '0px 1fr 0px' : `${leftWidth}px 1fr ${rightWidth}px`, transition: 'grid-template-columns 0.5s cubic-bezier(0.4, 0, 0.2, 1)' }}>
         {/* Left Sidebar */}
         <aside className="overflow-y-auto overflow-x-hidden" style={{ background: '#16161c', borderRight: '1px solid rgba(255,255,255,0.06)', width: leftWidth, opacity: focusMode ? 0 : 1, transition: 'opacity 0.3s ease', pointerEvents: focusMode ? 'none' : 'auto' }}>
-            <div className="p-4 border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-              <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">章节</div>
+            <div className="p-4 border-b flex justify-between items-center" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+              <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">章节</div>
+              <button onClick={() => setExpandedChapters(prev => prev.size > 0 ? new Set() : new Set(chapters.map(c => c.id)))} className="text-xs px-2 py-1 rounded" style={{ background: 'rgba(255,255,255,0.05)', color: '#71717a' }}>{expandedChapters.size > 0 ? '收起' : '展开'}</button>
+            </div>
+            <div>
               {chapters.map((ch) => (
-                <div
-                  key={ch.id}
-                  className="mb-1"
-                >
-                  <div
-                    className="flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all"
-                    style={{
-                      background: ch.id === activeChapterId ? 'rgba(124,106,240,0.12)' : 'transparent',
-                      border: ch.id === activeChapterId ? '1px solid rgba(124,106,240,0.2)' : '1px solid transparent',
-                    }}
-                  >
-                    <button
-                      onClick={(e) => { e.stopPropagation(); toggleExpand(ch.id); }}
-                      className="w-4 h-4 flex-shrink-0 flex items-center justify-center"
-                      style={{ color: '#52525b' }}
-                    >
+                <div key={ch.id} className="mb-1">
+                  <div className="flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all" style={{ background: ch.id === activeChapterId ? 'rgba(124,106,240,0.12)' : 'transparent', border: ch.id === activeChapterId ? '1px solid rgba(124,106,240,0.2)' : '1px solid transparent' }}>
+                    <button onClick={(e) => { e.stopPropagation(); setExpandedChapters(prev => { const next = new Set(prev); if (next.has(ch.id)) next.delete(ch.id); else next.add(ch.id); return next; }); }} className="w-4 h-4 flex items-center justify-center" style={{ color: '#52525b' }}>
                       <svg className="w-3 h-3 transition-transform" style={{ transform: expandedChapters.has(ch.id) ? 'rotate(90deg)' : 'rotate(0deg)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/>
                       </svg>
                     </button>
                     <div className="flex-1 min-w-0" onClick={() => switchChapter(ch.id)}>
                       <div className="text-sm truncate" style={{ color: ch.id === activeChapterId ? '#e4e4e7' : '#71717a' }}>{ch.title}</div>
-                      <div className="text-xs" style={{ color: '#52525b' }}>{ch.content.replace(/\s/g, '').length.toLocaleString()} 字</div>
                     </div>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleDeleteChapter(ch.id, ch.title); }}
-                      className="p-1 rounded hover:bg-red-500/20"
-                      style={{ color: '#71717a' }}
-                      title="删除章节"
-                    >
+                    <button onClick={(e) => { e.stopPropagation(); handleDeleteChapter(ch.id, ch.title); }} className="p-1 rounded hover:bg-red-500/20" style={{ color: '#71717a' }} title="删除章节">
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                       </svg>
                     </button>
                   </div>
-                  {/* Expanded content preview */}
-                  {expandedChapters.has(ch.id) && ch.content && (
-                    <div className="ml-6 p-2 rounded text-xs" style={{ background: 'rgba(255,255,255,0.03)', color: '#71717a', maxHeight: 100, overflow: 'auto' }}>
-                      {ch.content.slice(0, 200)}{ch.content.length > 200 ? '...' : ''}
-                    </div>
-                  )}
                 </div>
               ))}
               <button
@@ -756,6 +775,7 @@ const Editor: React.FC = () => {
                   { icon: '📋', title: '摘要', desc: '生成当前章节概要', action: 'summary' },
                   { icon: '📐', title: '扩展', desc: '扩展当前情节细节', action: 'expand' },
                   { icon: '🎯', title: '去除AI味', desc: '去除AI写作痕迹，更像人类写作', action: 'dehumanize' },
+                  { icon: '💬', title: '对风格化', desc: '根据角色性格调整对话', action: 'dialogue_style' },
                 ].map((item) => (
                   <button
                     key={item.action}

@@ -6,9 +6,10 @@ interface Props {
   currentChapterId: number;
   visible: boolean;
   onClose: () => void;
+  onNavigate?: (chapterId: number) => void;
 }
 
-const LogicChecker: React.FC<Props> = ({ chapters, currentChapterId, visible, onClose }) => {
+const LogicChecker: React.FC<Props> = ({ chapters, currentChapterId, visible, onClose, onNavigate }) => {
   const [issues, setIssues] = useState<any[]>([]);
   const [score, setScore] = useState<any>(null);
   const [checking, setChecking] = useState(false);
@@ -138,8 +139,8 @@ const LogicChecker: React.FC<Props> = ({ chapters, currentChapterId, visible, on
                             <span className="text-xs" style={{ color: '#a78bfa' }}>💡 建议：</span>
                             <span className="text-xs text-gray-400">{issue.suggestion}</span>
                           </div>
-                          {issue.chapterRef && (
-                            <button className="text-xs px-2 py-1 rounded" style={{ background: 'rgba(124,106,240,0.15)', color: '#a78bfa' }}>
+                          {issue.chapterRef && onNavigate && (
+                            <button onClick={(e) => { e.stopPropagation(); onNavigate(issue.chapterRef); }} className="text-xs px-2 py-1 rounded" style={{ background: 'rgba(124,106,240,0.15)', color: '#a78bfa' }}>
                               跳转到第{issue.chapterRef}章 →
                             </button>
                           )}

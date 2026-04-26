@@ -875,6 +875,10 @@ const Editor: React.FC = () => {
           currentChapterId={activeChapterId}
           visible={showLogic}
           onClose={() => setShowLogic(false)}
+          onNavigate={(chapterId) => {
+            setShowLogic(false);
+            setActiveChapterId(chapterId);
+          }}
         />
       )}
 

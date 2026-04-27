@@ -263,10 +263,9 @@ const Editor: React.FC = () => {
   }, [chapters]);
 
   const saveChaptersToServer = async (bid: string) => {
-    // Save chapters to server
     try {
       for (const ch of chapters) {
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/chapters/${ch.id}`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/chapters/${ch.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -276,6 +275,17 @@ const Editor: React.FC = () => {
             word_count: ch.content.replace(/\s/g, '').length
           })
         });
+        const data = await res.json();
+        if (data.success) {
+          await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/chapters/${ch.id}/versions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              content: ch.content,
+              word_count: ch.content.replace(/\s/g, '').length
+            })
+          });
+        }
       }
     } catch (err) {
       console.error('Failed to save chapters to server:', err);

@@ -75,6 +75,17 @@ async function initDb() {
     )
 `);
 
+  db.run(`
+    CREATE TABLE IF NOT EXISTS chapter_versions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      chapter_id INTEGER NOT NULL,
+      content TEXT,
+      word_count INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (chapter_id) REFERENCES chapters(id)
+    )
+  `);
+
 db.run(`
 CREATE TABLE IF NOT EXISTS characters (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

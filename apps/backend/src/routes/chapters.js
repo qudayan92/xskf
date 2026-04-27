@@ -116,4 +116,31 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+router.get('/:id/versions', async (req, res) => {
+  try {
+    const versions = await query(
+      'SELECT * FROM chapter_versions WHERE chapter_id = ? ORDER BY created_at DESC LIMIT 50',
+      [req.params.id]
+    );
+    res.json({ success: true, data: versions });
+  } catch (err) {
+    console.error('Error fetching versions:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.post('/:id/versions', async (req, res) => {
+  try {
+    const { content, word_count } = req.body;
+    await run(
+      'INSERT INTO chapter_versions (chapter_id, content, word_count, created_at) VALUES (?, ?, ?, datetime("now"))',
+      [req.params.id, content, word_count || 0]
+    );
+    res.status(201).json({ success: true, message: '版本已保存' });
+  } catch (err) {
+    console.error('Error saving version:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 module.exports = router;

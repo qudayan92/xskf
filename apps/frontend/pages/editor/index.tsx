@@ -416,6 +416,15 @@ const Editor: React.FC = () => {
       } else if (action === 'dialogue_style') {
         endpoint = '/api/v1/ai/dialogue-style';
         payload = { text, provider: config.provider, apiKey: config.apiKey, model: config.model, worldContext: aiContext };
+      } else if (action === 'mental') {
+        endpoint = '/api/v1/ai/mental';
+        payload = { text, provider: config.provider, apiKey: config.apiKey, model: config.model, worldContext: aiContext };
+      } else if (action === 'action') {
+        endpoint = '/api/v1/ai/action';
+        payload = { text, provider: config.provider, apiKey: config.apiKey, model: config.model, worldContext: aiContext };
+      } else if (action === 'scene') {
+        endpoint = '/api/v1/ai/scene';
+        payload = { text, provider: config.provider, apiKey: config.apiKey, model: config.model, worldContext: aiContext };
       }
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}${endpoint}`, {
@@ -776,6 +785,9 @@ const Editor: React.FC = () => {
                   { icon: '📐', title: '扩展', desc: '扩展当前情节细节', action: 'expand' },
                   { icon: '🎯', title: '去除AI味', desc: '去除AI写作痕迹，更像人类写作', action: 'dehumanize' },
                   { icon: '💬', title: '对风格化', desc: '根据角色性格调整对话', action: 'dialogue_style' },
+                  { icon: '🧠', title: '心理描写', desc: '添加角色心理活动', action: 'mental' },
+                  { icon: '🎬', title: '动作描写', desc: '添加动作和表情描写', action: 'action' },
+                  { icon: '🏞️', title: '场景描写', desc: '增强环境氛围描写', action: 'scene' },
                 ].map((item) => (
                   <button
                     key={item.action}

@@ -639,8 +639,19 @@ const Editor: React.FC = () => {
                   </div>
                 ))
               )}
-        </div>
-        </aside>
+            </div>
+
+            {/* Tools Navigation */}
+            <div className="p-4 mt-auto" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+              <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">功能</div>
+              <div className="grid grid-cols-2 gap-2">
+                <a href="/characters" className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-all hover:text-white" style={{ background: 'rgba(59,130,246,0.08)', color: '#3b82f6' }}>👤 角色</a>
+                <a href="/outline" className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-all hover:text-white" style={{ background: 'rgba(124,106,240,0.08)', color: '#a78bfa' }}>📋 大纲</a>
+                <a href="/tools" className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-all hover:text-white" style={{ background: 'rgba(245,158,11,0.08)', color: '#f59e0b' }}>🛠️ 工具</a>
+                <a href="/version-history" className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-all hover:text-white" style={{ background: 'rgba(34,197,94,0.08)', color: '#22c55e' }}>📜 版本</a>
+              </div>
+            </div>
+            </aside>
 
         {/* Editor Area */}
         <main className="flex flex-col min-h-0">

@@ -70,12 +70,8 @@ const Home: React.FC = () => {
               { name: '首页', href: '/', active: true },
               { name: '作品', href: '/works' },
               { name: '创作', href: '/editor' },
-              { name: '角色', href: '/characters' },
               { name: '世界观', href: '/world' },
               { name: '智能体', href: '/agents' },
-              { name: '大纲', href: '/outline' },
-              { name: '工具', href: '/tools' },
-              { name: '版本', href: '/version-history' },
               { name: '数据', href: '/analytics' },
             ].map((tab) => (
               <Link key={tab.name} href={tab.href} legacyBehavior>
@@ -147,23 +143,39 @@ const Home: React.FC = () => {
           <h2 className="text-2xl font-semibold text-center mb-12">核心功能</h2>
           <div className="grid grid-cols-3 gap-6">
             {[
-              { icon: '✍️', title: 'AI编辑器', desc: '续写润色、AI增强，9大AI功能', href: '/editor' },
-              { icon: '👤', title: '角色库', desc: '创建管理角色档案', href: '/characters' },
-              { icon: '🌍', title: '世界观', desc: '完善背景设定', href: '/world' },
-              { icon: '📋', title: '大纲管理', desc: '章节树+剧情线+伏笔', href: '/outline' },
-              { icon: '🛠️', title: '工具集', desc: '导出TXT、敏感词检测', href: '/tools' },
-              { icon: '📜', title: '版本历史', desc: '云端保存+恢复', href: '/version-history' },
-              { icon: '📊', title: '数据统计', desc: '收益分析+趋势', href: '/analytics' },
+              { icon: '📚', title: '作品管理', desc: '管理所有作品', href: '/works', children: [
+                { name: '角色库', href: '/characters' },
+                { name: '版本历史', href: '/version-history' },
+              ]},
+              { icon: '✍️', title: 'AI编辑器', desc: '续写润色、AI增强，9大AI功能', href: '/editor', children: [
+                { name: '大纲管理', href: '/outline' },
+                { name: '工具集', href: '/tools' },
+              ]},
+              { icon: '🌍', title: '世界观', desc: '完善世界设定', href: '/world' },
               { icon: '🎭', title: '智能体', desc: 'AI创作助手', href: '/agents' },
-              { icon: '📚', title: '作品管理', desc: '管理所有作品', href: '/works' },
+              { icon: '📊', title: '数据统计', desc: '收益分析+趋势', href: '/analytics' },
+              { icon: '💡', title: '开始创作', desc: 'AI驱动的创作流程', href: '/create' },
             ].map((feature, i) => (
-              <Link key={i} href={feature.href} legacyBehavior>
-                <a className="block p-6 rounded-xl cursor-pointer transition-all hover:scale-[1.02]" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
-                  <div className="text-3xl mb-4">{feature.icon}</div>
-                  <h3 className="font-medium text-white mb-2">{feature.title}</h3>
-                  <p className="text-sm" style={{ color: '#71717a', lineHeight: 1.7 }}>{feature.desc}</p>
-                </a>
-              </Link>
+              <div key={i} className="p-6 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
+                <Link href={feature.href} legacyBehavior>
+                  <a className="block cursor-pointer transition-all hover:scale-[1.02]">
+                    <div className="text-3xl mb-4">{feature.icon}</div>
+                    <h3 className="font-medium text-white mb-2">{feature.title}</h3>
+                    <p className="text-sm mb-3" style={{ color: '#71717a', lineHeight: 1.7 }}>{feature.desc}</p>
+                  </a>
+                </Link>
+                {feature.children && (
+                  <div className="flex flex-wrap gap-2 mt-2 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                    {feature.children.map((child, j) => (
+                      <Link key={j} href={child.href} legacyBehavior>
+                        <a className="text-xs px-2 py-1 rounded-md transition-colors hover:text-white" style={{ color: '#a78bfa', background: 'rgba(124,106,240,0.1)' }}>
+                          {child.name} →
+                        </a>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         </section>

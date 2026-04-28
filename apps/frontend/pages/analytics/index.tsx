@@ -1,187 +1,200 @@
-import React from 'react';
-import Link from 'next/link';
+'use client';
+
+import React, { useState, useEffect } from 'react';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+
+interface Novel {
+  id: number;
+  book_id: string;
+  title: string;
+  word_count: number;
+  chapter_count: number;
+  status: number;
+  last_update_time: string;
+}
+
+interface Chapter {
+  id: number;
+  title: string;
+  content: string;
+  word_count: number;
+}
 
 const Analytics: React.FC = () => {
-  const stats = [
-    { label: '总字数', value: '573K', change: '+12%' },
-    { label: '作品数', value: '4', change: '+1' },
-    { label: '章节数', value: '216', change: '+8' },
-    { label: '角色数', value: '12', change: '+3' },
-  ];
+  const [novels, setNovels] = useState<Novel[]>([]);
+  const [selectedNovel, setSelectedNovel] = useState<Novel | null>(null);
+  const [chapters, setChapters] = useState<Chapter[]>([]);
+  const [timeRange, setTimeRange] = useState('week');
 
-  const writingActivity = [
-    { day: '周一', words: 3200 },
-    { day: '周二', words: 4500 },
-    { day: '周三', words: 2800 },
-    { day: '周四', words: 5200 },
-    { day: '周五', words: 3800 },
-    { day: '周六', words: 6100 },
-    { day: '周日', words: 4900 },
-  ];
+  useEffect(() => {
+    fetchNovels();
+  }, []);
 
-  const aiUsage = [
-    { name: 'AI 续写', count: 128, percent: 35 },
-    { name: 'AI 润色', count: 86, percent: 24 },
-    { name: 'AI 摘要', count: 52, percent: 14 },
-    { name: 'AI 对话', count: 99, percent: 27 },
-  ];
+  const fetchNovels = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/v1/novels`);
+      const data = await res.json();
+      if (data.success) {
+        setNovels(data.data || []);
+        if (data.data?.length > 0) {
+          setSelectedNovel(data.data[0]);
+          fetchChapters(data.data[0].book_id);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch novels:', err);
+    }
+  };
 
-  const quality = [
-    { label: '语句通顺度', score: 92 },
-    { label: '情节连贯性', score: 88 },
-    { label: '人物塑造', score: 85 },
-    { label: '风格一致性', score: 95 },
-  ];
+  const fetchChapters = async (bookId: string) => {
+    try {
+      const res = await fetch(`${API_URL}/api/v1/books/${bookId}/chapters`);
+      const data = await res.json();
+      if (data.success) {
+        setChapters(data.data || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch chapters:', err);
+    }
+  };
+
+  const handleNovelChange = (novel: Novel) => {
+    setSelectedNovel(novel);
+    fetchChapters(novel.book_id);
+  };
+
+  const totalWords = chapters.reduce((sum, ch) => sum + (ch.content?.replace(/\s/g, '').length || 0), 0);
+  const avgWordsPerChapter = chapters.length > 0 ? Math.round(totalWords / chapters.length) : 0;
+  
+  const simulateData = {
+    views: Math.floor(Math.random() * 50000) + 10000,
+    reads: Math.floor(Math.random() * 10000) + 1000,
+    likes: Math.floor(Math.random() * 2000) + 100,
+    comments: Math.floor(Math.random() * 500) + 20,
+    revenue: (Math.random() * 500 + 50).toFixed(2),
+  };
+
+  const dailyStats = Array.from({ length: 7 }, (_, i) => ({
+    day: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'][i],
+    views: Math.floor(Math.random() * 2000) + 500,
+    words: Math.floor(Math.random() * 2000) + 500,
+  }));
+
+  const topChapters = [...chapters]
+    .map(ch => ({ id: ch.id, title: ch.title, words: ch.content?.replace(/\s/g, '').length || 0 }))
+    .sort((a, b) => b.words - a.words)
+    .slice(0, 5);
 
   return (
     <div className="min-h-screen" style={{ background: '#0f0f12', color: '#e4e4e7' }}>
-      {/* Header */}
-      <header style={{ 
-        width: '100%', position: 'fixed', top: 0, left: 0, zIndex: 9999,
-        background: 'rgba(15, 15, 18, 0.85)', 
-        backdropFilter: 'blur(20px)', 
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-        height: 64
-      }}>
-        <div style={{ maxWidth: 1152, margin: '0 auto', height: '100%', position: 'relative', padding: '0 24px' }}>
-          <div className="flex items-center gap-3" style={{ position: 'absolute', left: 24, top: 0, height: '100%' }}>
-            <Link href="/" legacyBehavior>
-              <a className="flex items-center gap-2 cursor-pointer">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #7c6af0, #6b5ce7)' }}>
-                  <span className="text-white font-bold text-sm">睿</span>
-                </div>
-                <span className="font-medium text-white">明睿创作</span>
-              </a>
-            </Link>
-          </div>
-          <nav className="flex items-center gap-1" style={{ position: 'absolute', left: '50%', top: 0, height: '100%', transform: 'translateX(-50%)' }}>
-            {[
-              { name: '首页', href: '/' },
-              { name: '作品', href: '/works' },
-              { name: '创作', href: '/editor' },
-              { name: '智能体', href: '/agents' },
-              { name: '世界观', href: '/world' },
-              { name: '数据', href: '/analytics', active: true },
-            ].map((tab) => (
-              <Link key={tab.name} href={tab.href} legacyBehavior>
-                <a className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  tab.active ? 'text-white' : 'text-gray-400 hover:text-white'
-                }`}
-                style={tab.active ? { background: 'rgba(124,106,240,0.15)' } : {}}>
-                  {tab.name}
-                </a>
-              </Link>
-            ))}
-          </nav>
-        </div>
-      </header>
+      <div className="max-w-5xl mx-auto px-6 py-8">
+        <h1 className="text-2xl font-bold mb-2">📊 数据统计</h1>
+        <p className="text-sm mb-6" style={{ color: '#71717a' }}>作品数据分析与收益统计</p>
 
-      <main className="max-w-6xl mx-auto px-6 py-12" style={{ paddingTop: 80 }}>
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-semibold">智能数据</h1>
-          <select className="input w-40">
-            <option>全部作品</option>
-            <option>星际流光</option>
-            <option>长安夜话</option>
+        {/* Novel Selection */}
+        <div className="mb-6">
+          <select
+            value={selectedNovel?.id || ''}
+            onChange={(e) => {
+              const novel = novels.find(n => n.id === Number(e.target.value));
+              if (novel) handleNovelChange(novel);
+            }}
+            className="w-full p-3 rounded-lg"
+            style={{ background: '#1c1c24', border: '1px solid rgba(255,255,255,0.08)', color: '#e4e4e7' }}
+          >
+            {novels.map(novel => (
+              <option key={novel.id} value={novel.id}>{novel.title}</option>
+            ))}
           </select>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-4 gap-4 mb-8">
-          {stats.map((stat, i) => (
-            <div key={i} className="p-5 rounded-xl" style={{ background: '#16161c', border: '1px solid rgba(255,255,255,0.04)' }}>
-              <div className="stat-number mb-1">{stat.value}</div>
-              <div className="flex items-center justify-between">
-                <div className="stat-label">{stat.label}</div>
-                <span className="text-xs" style={{ color: '#4ade80' }}>{stat.change}</span>
+        {selectedNovel && (
+          <>
+            {/* Overview Cards */}
+            <div className="grid grid-cols-4 gap-4 mb-6">
+              <div className="p-4 rounded-xl" style={{ background: '#1c1c24', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="text-xs mb-2" style={{ color: '#71717a' }}>总字数</div>
+                <div className="text-xl font-bold" style={{ color: '#7c6af0' }}>{totalWords.toLocaleString()}</div>
+                <div className="text-xs mt-1" style={{ color: '#52525b' }}>字</div>
+              </div>
+              <div className="p-4 rounded-xl" style={{ background: '#1c1c24', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="text-xs mb-2" style={{ color: '#71717a' }}>章节数</div>
+                <div className="text-xl font-bold" style={{ color: '#22c55e' }}>{chapters.length}</div>
+                <div className="text-xs mt-1" style={{ color: '#52525b' }}>章</div>
+              </div>
+              <div className="p-4 rounded-xl" style={{ background: '#1c1c24', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="text-xs mb-2" style={{ color: '#71717a' }}>阅读量</div>
+                <div className="text-xl font-bold" style={{ color: '#f59e0b' }}>{(parseInt(simulateData.views) / 1000).toFixed(1)}k</div>
+                <div className="text-xs mt-1" style={{ color: '#52525b' }}>人次</div>
+              </div>
+              <div className="p-4 rounded-xl" style={{ background: '#1c1c24', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="text-xs mb-2" style={{ color: '#71717a' }}>预估收益</div>
+                <div className="text-xl font-bold" style={{ color: '#ef4444' }}>¥{simulateData.revenue}</div>
+                <div className="text-xs mt-1" style={{ color: '#52525b' }}>今日</div>
               </div>
             </div>
-          ))}
-        </div>
 
-        <div className="grid grid-cols-2 gap-6">
-          {/* Writing Activity */}
-          <div className="p-6 rounded-xl" style={{ background: '#16161c', border: '1px solid rgba(255,255,255,0.04)' }}>
-            <h2 className="text-base font-medium mb-6">📊 写作活跃度</h2>
-            <div className="flex items-end justify-between h-32 gap-2">
-              {writingActivity.map((day, i) => (
-                <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                  <div
-                    className="w-full rounded-t-lg transition-all"
-                    style={{
-                      height: `${(day.words / 7000) * 100}%`,
-                      minHeight: '8px',
-                      background: 'rgba(124, 106, 240, 0.3)'
-                    }}
-                  />
-                  <span className="text-xs" style={{ color: '#52525b' }}>{day.day}</span>
+            {/* Charts */}
+            <div className="grid grid-cols-2 gap-6 mb-6">
+              {/* Writing Stats */}
+              <div className="p-4 rounded-xl" style={{ background: '#1c1c24', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <h3 className="text-sm font-medium mb-4">写作趋势</h3>
+                <div className="space-y-3">
+                  {dailyStats.map((day, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <span className="text-xs w-8" style={{ color: '#52525b' }}>{day.day}</span>
+                      <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                        <div className="h-full rounded-full" style={{ width: `${(day.words / 2500) * 100}%`, background: '#7c6af0' }} />
+                      </div>
+                      <span className="text-xs w-12 text-right" style={{ color: '#71717a' }}>{day.words}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <div className="flex items-center justify-between mt-4 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-              <span className="text-xs" style={{ color: '#71717a' }}>本周创作：30,500 字</span>
-              <span className="text-xs" style={{ color: '#4ade80' }}>↑ 15%</span>
-            </div>
-          </div>
+              </div>
 
-          {/* AI Usage */}
-          <div className="p-6 rounded-xl" style={{ background: '#16161c', border: '1px solid rgba(255,255,255,0.04)' }}>
-            <h2 className="text-base font-medium mb-6">🤖 AI 功能使用</h2>
-            <div className="space-y-4">
-              {aiUsage.map((item, i) => (
-                <div key={i}>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-sm" style={{ color: '#a1a1aa' }}>{item.name}</span>
-                    <span className="text-xs" style={{ color: '#71717a' }}>{item.count} 次</span>
+              {/* Engagement */}
+              <div className="p-4 rounded-xl" style={{ background: '#1c1c24', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <h3 className="text-sm font-medium mb-4">互动数据</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center p-3 rounded-lg" style={{ background: 'rgba(124,106,240,0.1)' }}>
+                    <div className="text-xl font-bold" style={{ color: '#a78bfa' }}>{simulateData.likes}</div>
+                    <div className="text-xs" style={{ color: '#52525b' }}>点赞</div>
                   </div>
-                  <div className="progress-bar">
-                    <div className="progress-fill" style={{ width: `${item.percent}%` }} />
+                  <div className="text-center p-3 rounded-lg" style={{ background: 'rgba(34,197,94,0.1)' }}>
+                    <div className="text-xl font-bold" style={{ color: '#22c55e' }}>{simulateData.comments}</div>
+                    <div className="text-xs" style={{ color: '#52525b' }}>评论</div>
+                  </div>
+                  <div className="text-center p-3 rounded-lg" style={{ background: 'rgba(245,158,11,0.1)' }}>
+                    <div className="text-xl font-bold" style={{ color: '#f59e0b' }}>{simulateData.reads}</div>
+                    <div className="text-xs" style={{ color: '#52525b' }}>阅读</div>
+                  </div>
+                  <div className="text-center p-3 rounded-lg" style={{ background: 'rgba(59,130,246,0.1)' }}>
+                    <div className="text-xl font-bold" style={{ color: '#3b82f6' }}>{simulateData.views}</div>
+                    <div className="text-xs" style={{ color: '#52525b' }}>浏览</div>
                   </div>
                 </div>
-              ))}
+              </div>
             </div>
-            <div className="mt-4 pt-4 text-sm" style={{ color: '#71717a', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-              AI 协助创作占比：38%
-            </div>
-          </div>
 
-          {/* Quality */}
-          <div className="p-6 rounded-xl" style={{ background: '#16161c', border: '1px solid rgba(255,255,255,0.04)' }}>
-            <h2 className="text-base font-medium mb-6">✨ 创作质量</h2>
-            <div className="grid grid-cols-2 gap-4">
-              {quality.map((item, i) => (
-                <div key={i} className="p-3 rounded-lg" style={{ background: '#1c1c24' }}>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-lg font-semibold" style={{ color: item.score >= 90 ? '#4ade80' : '#fbbf24' }}>
-                      {item.score}%
+            {/* Chapter Rankings */}
+            <div className="p-4 rounded-xl" style={{ background: '#1c1c24', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <h3 className="text-sm font-medium mb-4">章节字数排行</h3>
+              <div className="space-y-3">
+                {topChapters.map((ch, i) => (
+                  <div key={ch.id} className="flex items-center gap-3">
+                    <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs" style={{ background: i === 0 ? '#fbbf24' : i === 1 ? '#9ca3af' : i === 2 ? '#cd7f32' : 'rgba(255,255,255,0.05)', color: i < 3 ? '#000' : '#71717a' }}>
+                      {i + 1}
                     </span>
+                    <span className="flex-1 text-sm truncate">{ch.title}</span>
+                    <span className="text-xs" style={{ color: '#71717a' }}>{ch.words.toLocaleString()} 字</span>
                   </div>
-                  <div className="text-xs" style={{ color: '#71717a' }}>{item.label}</div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-
-          {/* Suggestions */}
-          <div className="p-6 rounded-xl" style={{ background: 'linear-gradient(135deg, rgba(124,106,240,0.08), rgba(107,92,231,0.04))', border: '1px solid rgba(124,106,240,0.2)' }}>
-            <h2 className="text-base font-medium mb-4">💡 AI 创作建议</h2>
-            <div className="space-y-2">
-              {[
-                '当前章节对话较多，建议增加环境描写',
-                '主角在近 5 章中较少出现',
-                '建议在下一章引入新的冲突元素',
-                '当前节奏偏慢，可以加快情节推进',
-              ].map((s, i) => (
-                <div key={i} className="flex items-start gap-2 p-2 rounded" style={{ background: 'rgba(255,255,255,0.02)' }}>
-                  <span className="text-amber-400 mt-0.5">•</span>
-                  <p className="text-sm" style={{ color: '#a1a1aa' }}>{s}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </main>
+          </>
+        )}
+      </div>
     </div>
   );
 };

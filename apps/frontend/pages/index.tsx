@@ -70,8 +70,12 @@ const Home: React.FC = () => {
               { name: '首页', href: '/', active: true },
               { name: '作品', href: '/works' },
               { name: '创作', href: '/editor' },
-              { name: '智能体', href: '/agents' },
+              { name: '角色', href: '/characters' },
               { name: '世界观', href: '/world' },
+              { name: '智能体', href: '/agents' },
+              { name: '大纲', href: '/outline' },
+              { name: '工具', href: '/tools' },
+              { name: '版本', href: '/version-history' },
               { name: '数据', href: '/analytics' },
             ].map((tab) => (
               <Link key={tab.name} href={tab.href} legacyBehavior>
@@ -143,12 +147,15 @@ const Home: React.FC = () => {
           <h2 className="text-2xl font-semibold text-center mb-12">核心功能</h2>
           <div className="grid grid-cols-3 gap-6">
             {[
-              { icon: '💡', title: '智能大纲', desc: 'AI 分析故事结构，生成逻辑清晰的情节脉络', href: '/create' },
-              { icon: '👤', title: '角色建模', desc: '构建立体人物档案，性格、动机、外貌全方位刻画', href: '/characters' },
-              { icon: '🌍', title: '世界观构建', desc: '创建完整世界设定，历史、地理、文化一脉相承', href: '/world' },
-              { icon: '✍️', title: '智能编辑', desc: '续写、润色、摘要，AI 与你共同创作', href: '/editor' },
-              { icon: '📋', title: '版本管理', desc: '多版本对比，历史追溯，协作更高效', href: '/works' },
-              { icon: '📄', title: '多格式导出', desc: 'PDF、EPUB、Word，适配各类阅读与出版需求', href: '/works' },
+              { icon: '✍️', title: 'AI编辑器', desc: '续写润色、AI增强，9大AI功能', href: '/editor' },
+              { icon: '👤', title: '角色库', desc: '创建管理角色档案', href: '/characters' },
+              { icon: '🌍', title: '世界观', desc: '完善背景设定', href: '/world' },
+              { icon: '📋', title: '大纲管理', desc: '章节树+剧情线+伏笔', href: '/outline' },
+              { icon: '🛠️', title: '工具集', desc: '导出TXT、敏感词检测', href: '/tools' },
+              { icon: '📜', title: '版本历史', desc: '云端保存+恢复', href: '/version-history' },
+              { icon: '📊', title: '数据统计', desc: '收益分析+趋势', href: '/analytics' },
+              { icon: '🎭', title: '智能体', desc: 'AI创作助手', href: '/agents' },
+              { icon: '📚', title: '作品管理', desc: '管理所有作品', href: '/works' },
             ].map((feature, i) => (
               <Link key={i} href={feature.href} legacyBehavior>
                 <a className="block p-6 rounded-xl cursor-pointer transition-all hover:scale-[1.02]" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>

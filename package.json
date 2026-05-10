@@ -1,0 +1,20 @@
+{
+  "name": "novel-ai-studio",
+  "private": true,
+  "workspaces": [
+    "apps/backend",
+    "apps/frontend"
+  ],
+  "scripts": {
+    "dev": "node -e \"const{execSync}=require('child_process');try{execSync('npx kill-port 4000 3000 --silent')}catch{}\" && concurrently \"npm --prefix apps/backend run dev\" \"npm --prefix apps/frontend run dev\"",
+    "dev:backend": "npm --prefix apps/backend run dev",
+    "dev:frontend": "npm --prefix apps/frontend run dev",
+    "build": "npm --prefix apps/frontend run build",
+    "start": "npm --prefix apps/frontend start",
+    "lint": "echo Linting is not configured yet"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "kill-port": "^2.0.1"
+  }
+}

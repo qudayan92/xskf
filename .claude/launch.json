@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "ccdxiaos-backend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "apps/backend", "run", "dev"],
+      "port": 4001,
+      "env": { "PORT": "4001" }
+    },
+    {
+      "name": "ccdxiaos-frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "apps/frontend", "run", "dev", "--", "-p", "3001"],
+      "port": 3001
+    }
+  ]
+}
